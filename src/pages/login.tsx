@@ -153,7 +153,7 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
       </div>
 
       <footer className="rap-footer">
-        <span>© 2024 Architectural Archive. Secure Government Infrastructure.</span>
+        <span>ï¿½ 2024 Architectural Archive. Secure Government Infrastructure.</span>
         <div className="rap-footer__links">
           <a href="#">Privacy</a>
           <a href="#">Terms</a>
