@@ -140,26 +140,21 @@ Runs ESLint to check code quality and TypeScript compliance.
   - Filter by category
   - Integrated search UI
 
-- **Team 4:** Story 8 - Statistical Dashboard
-  - Display total document count
-  - Show folder/category count
-  - Display today's upload count
-
 ### Sprint 3: Cross-Integration & Packaging (3 hours)
 
 **Goal:** Integrate all features, fix bugs, prepare demo.
 
-- **Teams 1 & 2:** Story 9 - UI/UX Integration & Error Handling
+- **Teams 1 & 2:** Story 8 - UI/UX Integration & Error Handling
   - File size validation (max 50MB)
   - File format validation
   - Error messages and user feedback
   - Code merge to shared branch
 
-- **Team 3:** Story 10 - Attach Logs to All Actions
+- **Team 3:** Story 9 - Attach Logs to All Actions
   - Connect audit logging to upload/download/delete operations
   - Complete activity history tracking
 
-- **Team 4:** Story 11 - Demo Data & Presentation
+- **Team 4:** Story 10 - Demo Data & Presentation
   - Create 10 sample categories
   - Upload 20-30 realistic sample documents
   - Prepare demo script and talking points
