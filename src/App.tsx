@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import RegisterPage from './pages/register'
 import SignInPage from './pages/login'
-import DashboardPage from './pages/dashboard'
+import FileListPage from './pages/fileList'
 import { getAuthToken } from './services/authService'
 
 type AuthMode = 'register' | 'login'
@@ -15,7 +15,7 @@ function App() {
   }, [])
 
   if (authenticated) {
-    return <DashboardPage onSignOut={() => setAuthenticated(false)} />
+    return <FileListPage onSignOut={() => setAuthenticated(false)} />
   }
 
   return mode === 'register' ? (
