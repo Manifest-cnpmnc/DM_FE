@@ -1,5 +1,4 @@
 import { useState, type ChangeEvent } from 'react'
-import { Shield } from 'lucide-react'
 import heroImg from '../assets/hero.png'
 import '../styles/register.css'
 
@@ -25,6 +24,7 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
     password: '',
     confirmPassword: '',
   })
+  const [toast, setToast] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -33,8 +33,39 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ type, message })
+    window.setTimeout(() => setToast(null), 4200)
+  }
+
   const handleSubmit = () => {
-    // integrate later
+    const errors: string[] = []
+
+    if (!form.fullName.trim()) {
+      errors.push('Full Name is required.')
+    }
+    if (!form.email.trim()) {
+      errors.push('Email Address is required.')
+    }
+    if (!form.password) {
+      errors.push('Password is required.')
+    }
+    if (!form.confirmPassword) {
+      errors.push('Confirm Password is required.')
+    }
+    if (form.password && !/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(form.password)) {
+      errors.push('Password must be at least 8 characters and include letters and numbers.')
+    }
+    if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
+      errors.push('Passwords do not match.')
+    }
+
+    if (errors.length > 0) {
+      showToast(errors.join(' '), 'error')
+      return
+    }
+
+    showToast('Account created successfully.', 'success')
     console.log('form submitted', form)
   }
 
@@ -73,6 +104,11 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
         {/* Right form */}
         <main className="rap-main">
           <div className="rap-form">
+            {toast ? (
+              <div className={`rap-toast rap-toast--${toast.type}`}>
+                {toast.message}
+              </div>
+            ) : null}
             <div className="rap-form__header">
               <h1 className="rap-form__title">Create your account</h1>
               <p className="rap-form__subtitle">
@@ -135,7 +171,6 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
 
             {/* Verification notice */}
             <div className="rap-notice">
-              <Shield size={17} className="rap-notice__icon" />
               <div>
                 <p className="rap-notice__title">Secure and easy</p>
                 <p className="rap-notice__body">

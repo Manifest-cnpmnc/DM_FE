@@ -2,10 +2,8 @@
    RequestAccessPage.css
    Import: @import './RequestAccessPage.css' trong file tsx
    Requires: npm install lucide-react
-   Fonts:    Google Fonts (DM Sans + Playfair Display) được load qua @import
+   Fonts:    System UI font stack is used for all text
    ───────────────────────────────────────────────────────────────── */
-
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
 
 /* ── TOKENS ─────────────────────────────────────────────────────── */
 :root {
@@ -45,7 +43,7 @@
     radial-gradient(circle at top left, rgba(67, 111, 255, 0.15) 0%, transparent 28%),
     radial-gradient(circle at bottom right, rgba(90, 78, 255, 0.12) 0%, transparent 22%),
     var(--rap-bg);
-  font-family: 'DM Sans', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--rap-text);
   -webkit-font-smoothing: antialiased;
 }
@@ -67,7 +65,7 @@
 }
 
 .rap-nav__brand {
-  font-family: 'Playfair Display', serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--rap-navy);
@@ -94,7 +92,7 @@
   color: #fff;
   border: none;
   border-radius: 999px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -172,7 +170,7 @@
 }
 
 .rap-aside__title {
-  font-family: 'Playfair Display', serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 3rem;
   font-weight: 800;
   line-height: 1.02;
@@ -225,7 +223,7 @@
 }
 
 .rap-form__title {
-  font-family: 'Playfair Display', serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 2.15rem;
   font-weight: 700;
   color: var(--rap-navy);
@@ -276,7 +274,7 @@
   border: 1px solid rgba(221, 219, 213, 0.95);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.96);
-  font-family: 'DM Sans', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.95rem;
   color: var(--rap-navy);
   outline: none;
@@ -379,6 +377,26 @@
   line-height: 1.6;
 }
 
+.rap-toast {
+  width: 100%;
+  max-width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #fff;
+  background: #b91c1c;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+}
+.rap-toast--success {
+  background: #15803d;
+}
+.rap-toast--error {
+  background: #b91c1c;
+}
+
 /* ── ACTIONS ────────────────────────────────────────────────────── */
 .rap-actions {
   display: flex;
@@ -392,7 +410,7 @@
   color: #fff;
   border: none;
   border-radius: 7px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;

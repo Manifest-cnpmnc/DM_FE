@@ -1,37 +1,55 @@
 import { useState, type ChangeEvent } from 'react'
-import { Lock } from 'lucide-react'
 import heroImg from '../assets/hero.png'
 import '../styles/register.css'
-
-interface AuthPageProps {
-  onSwitch?: () => void
-}
 
 interface LoginFormState {
   email: string
   password: string
-  remember: boolean
+}
+
+interface AuthPageProps {
+  onSwitch?: () => void
 }
 
 export default function SignInPage({ onSwitch }: AuthPageProps) {
   const [form, setForm] = useState<LoginFormState>({
     email: '',
     password: '',
-    remember: false,
   })
+  const [toast, setToast] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, type, checked } = e.target
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ type, message })
+    window.setTimeout(() => setToast(null), 4200)
   }
 
   const handleSubmit = () => {
-    console.log('login submitted', form)
+    const errors: string[] = []
+
+    if (!form.email.trim()) {
+      errors.push('Email Address is required.')
+    }
+    if (!form.password) {
+      errors.push('Password is required.')
+    }
+    if (form.password && form.password.length < 8) {
+      errors.push('Password must be at least 8 characters.')
+    }
+
+    if (errors.length > 0) {
+      showToast(errors.join(' '), 'error')
+      return
+    }
+
+    showToast('Signed in successfully.', 'success')
+    console.log('sign in', form)
   }
 
   return (
@@ -41,28 +59,49 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
         <div className="rap-nav__links">
           <a href="#" className="rap-nav__link">Contact Support</a>
           <a href="#" className="rap-nav__link">Security Policy</a>
-          <button className="rap-nav__signin" type="button" onClick={onSwitch}>Register</button>
+          <button className="rap-nav__signin" type="button" onClick={onSwitch}>Create Account</button>
         </div>
       </nav>
 
       <div className="rap-body">
+        <aside className="rap-aside">
+          <div className="rap-aside__overlay" />
+          <div className="rap-aside__content">
+            <div className="rap-aside__visual">
+              <img src={heroImg} alt="Workspace overview" />
+            </div>
+            <p className="rap-aside__label">Welcome back</p>
+            <h2 className="rap-aside__title">
+              Sign in to continue<br />and manage your documents
+            </h2>
+            <p className="rap-aside__desc">
+              Use your existing account to access secure government features and file management.
+            </p>
+          </div>
+        </aside>
+
         <main className="rap-main">
           <div className="rap-form">
+            {toast ? (
+              <div className={`rap-toast rap-toast--${toast.type}`}>
+                {toast.message}
+              </div>
+            ) : null}
             <div className="rap-form__header">
               <h1 className="rap-form__title">Sign In</h1>
               <p className="rap-form__subtitle">
-                Enter your official credentials to continue.
+                Enter your credentials to open your dashboard.
               </p>
             </div>
 
             <div className="rap-form__grid">
               <div className="rap-field rap-field--full">
-                <label className="rap-field__label">Official Email</label>
+                <label className="rap-field__label">Email Address</label>
                 <input
                   className="rap-field__input"
                   type="email"
                   name="email"
-                  placeholder="j.doe@dept.gov"
+                  placeholder="you@example.com"
                   value={form.email}
                   onChange={handleChange}
                 />
@@ -74,32 +113,21 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
                   className="rap-field__input"
                   type="password"
                   name="password"
-                  placeholder="••••••••••••••"
+                  placeholder="Enter your password"
                   value={form.password}
                   onChange={handleChange}
                 />
-              </div>
-
-              <div className="rap-checkbox">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  name="remember"
-                  checked={form.remember}
-                  onChange={handleChange}
-                />
-                <label className="rap-checkbox__label" htmlFor="remember">
-                  Remember me
-                </label>
+                <p className="rap-field__hint">
+                  Password must be at least 8 characters.
+                </p>
               </div>
             </div>
 
             <div className="rap-notice">
-              <Lock size={17} className="rap-notice__icon" />
               <div>
-                <p className="rap-notice__title">Encrypted Session</p>
+                <p className="rap-notice__title">Secure access</p>
                 <p className="rap-notice__body">
-                  Your login request is protected with advanced encryption and monitored by the security operations center.
+                  Your login is protected with modern authentication and secure session handling.
                 </p>
               </div>
             </div>
@@ -117,31 +145,15 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
                 className="rap-actions__link"
                 onClick={onSwitch}
               >
-                Need access? Request Account
+                Don't have an account? Register
               </button>
             </div>
           </div>
         </main>
-
-        <aside className="rap-aside">
-          <div className="rap-aside__overlay" />
-          <div className="rap-aside__content">
-            <div className="rap-aside__visual">
-              <img src={heroImg} alt="Secure archival access" />
-            </div>
-            <p className="rap-aside__label">Secure Access Portal</p>
-            <h2 className="rap-aside__title">
-              Welcome Back<br />Authorized Personnel
-            </h2>
-            <p className="rap-aside__desc">
-              Sign in to continue your review and access the secure archival network. Only verified users may proceed.
-            </p>
-          </div>
-        </aside>
       </div>
 
       <footer className="rap-footer">
-        <span>© 2026 Architectural Archive. Secure Government Infrastructure.</span>
+        <span>� 2024 Architectural Archive. Secure Government Infrastructure.</span>
         <div className="rap-footer__links">
           <a href="#">Privacy</a>
           <a href="#">Terms</a>
