@@ -94,3 +94,12 @@ export const downloadDocumentVersion = async (id: number, versionNumber: number)
   })
   return response.data
 }
+
+export const uploadDocument = async (formData: FormData) => {
+  const response = await apiClient.post<ApiResponse<DocumentItem>>('/api/documents', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
+}

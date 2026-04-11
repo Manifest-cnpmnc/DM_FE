@@ -5,6 +5,7 @@ import type { DocumentItem } from '../services/documentService'
 
 interface FileListPageProps {
   onSignOut: () => void
+  onUpload: () => void
 }
 
 const statusColors: Record<string, string> = {
@@ -15,7 +16,7 @@ const statusColors: Record<string, string> = {
   ARCHIVED: '#6b7280',
 }
 
-export default function FileListPage({ onSignOut }: FileListPageProps) {
+export default function FileListPage({ onSignOut, onUpload }: FileListPageProps) {
   const user = getAuthUser()
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loading, setLoading] = useState<boolean>(false)
@@ -174,9 +175,7 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
                   type="button"
                   className="rap-actions__secondary"
                   style={{ flex: 1, minWidth: 0 }}
-                  onClick={() => {
-                    setError(null)
-                  }}
+                  onClick={onUpload}
                 >
                   Upload
                 </button>
