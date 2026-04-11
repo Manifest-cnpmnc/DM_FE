@@ -118,7 +118,7 @@ export default function DocumentsPage() {
       setUploadDesc('')
       setUploadCategory('')
       setUploadTags('')
-      fetchDocuments(0)
+      fetchDocuments(0, { title: searchTitle, status: statusFilter, category: categoryFilter })
     } catch {
       setError('Upload failed.')
     } finally {
