@@ -128,6 +128,7 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
             boxShadow: '0 28px 70px rgba(15, 23, 42, 0.08)',
             fontSize: '0.95rem',
             lineHeight: 1.6,
+            boxSizing: 'border-box',
           }}
         >
           <div className="rap-form__header" style={{ maxWidth: '100%', marginBottom: '12px' }}>
@@ -140,8 +141,8 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
           </div>
 
           <div style={{ display: 'grid', gap: '20px', marginTop: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-              <div style={{ minWidth: '260px', flex: 1 }}>
+            <div className="rap-list__toolbar">
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <label className="rap-field__label">Search by title</label>
                 <input
                   className="rap-field__input"
@@ -152,7 +153,7 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
                   disabled={loading}
                 />
               </div>
-              <div style={{ minWidth: '260px', flex: 1, maxWidth: '260px' }}>
+              <div style={{ minWidth: 0, flex: 1, maxWidth: '260px' }}>
                 <label className="rap-field__label">Status</label>
                 <select
                   className="rap-field__select"
@@ -168,20 +169,11 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
                   <option value="ARCHIVED">Archived</option>
                 </select>
               </div>
-              <div style={{ minWidth: '140px', alignSelf: 'flex-end', display: 'flex', gap: '12px' }}>
+              <div className="rap-list__toolbar-actions">
                 <button
                   type="button"
-                  className="rap-actions__primary"
-                  style={{ width: '100%' }}
-                  onClick={fetchDocuments}
-                  disabled={loading}
-                >
-                  {loading ? 'Loading…' : 'Refresh'}
-                </button>
-                <button
-                  type="button"
-                  className="rap-actions__primary"
-                  style={{ width: '100%', background: '#10b981' }}
+                  className="rap-actions__secondary"
+                  style={{ flex: 1, minWidth: 0 }}
                   onClick={() => {
                     setError(null)
                   }}
@@ -201,7 +193,7 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
             ) : null}
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.92rem' }}>
+              <table className="rap-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.92rem' }}>
                 <thead>
                   <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(221, 219, 213, 0.8)' }}>
                     <th style={{ padding: '14px 12px', color: '#1f2937', fontWeight: 700 }}>Title</th>
@@ -246,7 +238,7 @@ export default function FileListPage({ onSignOut }: FileListPageProps) {
                         </td>
                         <td style={{ padding: '16px 12px', color: '#4b5563' }}>{doc.createdByName}</td>
                         <td style={{ padding: '16px 12px', color: '#4b5563' }}>{new Date(doc.updatedAt).toLocaleDateString()}</td>
-                        <td style={{ padding: '16px 12px', display: 'flex', gap: '10px' }}>
+                        <td className="rap-list__download-cell" style={{ padding: '16px 12px', display: 'flex', gap: '10px' }}>
                           <button
                             type="button"
                             className="rap-actions__primary"
