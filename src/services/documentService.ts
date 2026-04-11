@@ -94,3 +94,102 @@ export const downloadDocumentVersion = async (id: number, versionNumber: number)
   })
   return response.data
 }
+
+export const getDocumentById = async (id: number) => {
+  const response = await apiClient.get<ApiResponse<DocumentItem>>(`/api/documents/${id}`)
+  return response.data
+}
+
+export const uploadDocument = async (file: File, params: {
+  title: string
+  description?: string
+  categoryId: number
+  tags?: string[]
+}) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await apiClient.post<ApiResponse<DocumentItem>>('/api/documents', formData, {
+    params,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return response.data
+}
+
+export const updateDocument = async (id: number, data: {
+  title: string
+  description?: string
+  categoryId: number
+  tags?: string[]
+}) => {
+  const response = await apiClient.put<ApiResponse<DocumentItem>>(`/api/documents/${id}`, data)
+  return response.data
+}
+
+export const deleteDocument = async (id: number) => {
+  const response = await apiClient.delete<ApiResponse<void>>(`/api/documents/${id}`)
+  return response.data
+}
+
+export const submitDocument = async (id: number, comment?: string) => {
+  const response = await apiClient.post<ApiResponse<DocumentItem>>(`/api/documents/${id}/submit`, { comment })
+  return response.data
+}
+
+export const approveDocument = async (id: number, comment?: string) => {
+  const response = await apiClient.post<ApiResponse<DocumentItem>>(`/api/documents/${id}/approve`, { comment })
+  return response.data
+}
+
+export const rejectDocument = async (id: number, comment?: string) => {
+  const response = await apiClient.post<ApiResponse<DocumentItem>>(`/api/documents/${id}/reject`, { comment })
+  return response.data
+}
+
+export const archiveDocument = async (id: number, comment?: string) => {
+  const response = await apiClient.post<ApiResponse<DocumentItem>>(`/api/documents/${id}/archive`, { comment })
+  return response.data
+}
+
+export interface DocumentVersion {
+  id: number
+  versionNumber: number
+  fileUrl: string
+  comment: string
+  createdByName: string
+  createdAt: string
+}
+
+export const getDocumentVersions = async (id: number) => {
+  const response = await apiClient.get<ApiResponse<DocumentVersion[]>>(`/api/documents/${id}/versions`)
+  return response.data
+}
+
+export const uploadNewVersion = async (id: number, file: File, comment?: string) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await apiClient.post<ApiResponse<DocumentVersion>>(`/api/documents/${id}/versions`, formData, {
+    params: { comment },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return response.data
+}
+
+export const rollbackDocument = async (id: number, targetVersion: number, reason?: string) => {
+  const response = await apiClient.post<ApiResponse<DocumentVersion>>(`/api/documents/${id}/rollback`, null, {
+    params: { targetVersion, reason },
+  })
+  return response.data
+}
+
+export interface WorkflowHistoryItem {
+  id: number
+  action: string
+  comment: string
+  performedByName: string
+  createdAt: string
+}
+
+export const getWorkflowHistory = async (id: number) => {
+  const response = await apiClient.get<ApiResponse<WorkflowHistoryItem[]>>(`/api/documents/${id}/workflow-history`)
+  return response.data
+}
