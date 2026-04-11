@@ -1,30 +1,31 @@
-import { useState, type ChangeEvent } from 'react'
+﻿import { useState, type ChangeEvent } from 'react'
 import heroImg from '../assets/hero.png'
 import '../styles/register.css'
-
-// ─── Types ───────────────────────────────────────────────────────────────────
+import { register } from '../services/authService'
 
 interface FormState {
   fullName: string
   email: string
   password: string
   confirmPassword: string
+  phone: string
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 interface AuthPageProps {
   onSwitch?: () => void
+  onSuccess?: () => void
 }
 
-export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
+export default function RequestAccessPage({ onSwitch, onSuccess }: AuthPageProps) {
   const [form, setForm] = useState<FormState>({
     fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    phone: '',
   })
   const [toast, setToast] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -38,7 +39,7 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
     window.setTimeout(() => setToast(null), 4200)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errors: string[] = []
 
     if (!form.fullName.trim()) {
@@ -53,6 +54,9 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
     if (!form.confirmPassword) {
       errors.push('Confirm Password is required.')
     }
+    if (!form.phone.trim()) {
+      errors.push('Phone is required.')
+    }
     if (form.password && !/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(form.password)) {
       errors.push('Password must be at least 8 characters and include letters and numbers.')
     }
@@ -65,25 +69,45 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
       return
     }
 
-    showToast('Account created successfully.', 'success')
-    console.log('form submitted', form)
+    setIsLoading(true)
+    try {
+      const response = await register(
+        form.email,
+        form.password,
+        form.fullName,
+        form.phone
+      )
+
+      if (!response.success) {
+        showToast(response.message || 'Registration failed.', 'error')
+        return
+      }
+
+      showToast('Account created successfully. Please sign in.', 'success')
+      onSuccess?.()
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to create account. Please try again.'
+      showToast(message, 'error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <div className="rap-root">
-      {/* ── NAV ── */}
       <nav className="rap-nav">
         <span className="rap-nav__brand">The Archive</span>
         <div className="rap-nav__links">
           <a href="#" className="rap-nav__link">Contact Support</a>
           <a href="#" className="rap-nav__link">Security Policy</a>
-          <button className="rap-nav__signin" type="button" onClick={onSwitch}>Sign In</button>
+          <button className="rap-nav__signin" type="button" onClick={onSwitch} disabled={isLoading}>
+            Sign In
+          </button>
         </div>
       </nav>
 
-      {/* ── BODY ── */}
       <div className="rap-body">
-        {/* Left panel */}
         <aside className="rap-aside">
           <div className="rap-aside__overlay" />
           <div className="rap-aside__content">
@@ -101,7 +125,6 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
           </div>
         </aside>
 
-        {/* Right form */}
         <main className="rap-main">
           <div className="rap-form">
             {toast ? (
@@ -126,6 +149,7 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
                   placeholder="John Doe"
                   value={form.fullName}
                   onChange={handleChange}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -138,6 +162,20 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
                   placeholder="you@example.com"
                   value={form.email}
                   onChange={handleChange}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="rap-field rap-field--full">
+                <label className="rap-field__label">Phone</label>
+                <input
+                  className="rap-field__input"
+                  type="tel"
+                  name="phone"
+                  placeholder="0912345678"
+                  value={form.phone}
+                  onChange={handleChange}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -150,6 +188,7 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
                   placeholder="Create a password"
                   value={form.password}
                   onChange={handleChange}
+                  disabled={isLoading}
                 />
                 <p className="rap-field__hint">
                   At least 8 characters, with letters and numbers.
@@ -165,11 +204,11 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
                   placeholder="Repeat your password"
                   value={form.confirmPassword}
                   onChange={handleChange}
+                  disabled={isLoading}
                 />
               </div>
             </div>
 
-            {/* Verification notice */}
             <div className="rap-notice">
               <div>
                 <p className="rap-notice__title">Secure and easy</p>
@@ -180,19 +219,20 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="rap-actions">
               <button
                 className="rap-actions__primary"
                 type="button"
                 onClick={handleSubmit}
+                disabled={isLoading}
               >
-                Create Account
+                {isLoading ? 'Creating account…' : 'Create Account'}
               </button>
               <button
                 type="button"
                 className="rap-actions__link"
                 onClick={onSwitch}
+                disabled={isLoading}
               >
                 Already have an account? Sign In
               </button>
@@ -201,7 +241,6 @@ export default function RequestAccessPage({ onSwitch }: AuthPageProps) {
         </main>
       </div>
 
-      {/* ── FOOTER ── */}
       <footer className="rap-footer">
         <span>© 2024 Architectural Archive. Secure Government Infrastructure.</span>
         <div className="rap-footer__links">
