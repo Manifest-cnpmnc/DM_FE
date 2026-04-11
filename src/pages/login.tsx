@@ -1,6 +1,8 @@
 import { useState, type ChangeEvent } from 'react'
+import { AxiosError } from 'axios'
 import heroImg from '../assets/hero.png'
 import '../styles/register.css'
+import { login } from '../services/authService'
 
 interface LoginFormState {
   email: string
@@ -9,14 +11,16 @@ interface LoginFormState {
 
 interface AuthPageProps {
   onSwitch?: () => void
+  onSuccess?: () => void
 }
 
-export default function SignInPage({ onSwitch }: AuthPageProps) {
+export default function SignInPage({ onSwitch, onSuccess }: AuthPageProps) {
   const [form, setForm] = useState<LoginFormState>({
     email: '',
     password: '',
   })
   const [toast, setToast] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -30,7 +34,7 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
     window.setTimeout(() => setToast(null), 4200)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errors: string[] = []
 
     if (!form.email.trim()) {
@@ -48,8 +52,27 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
       return
     }
 
-    showToast('Signed in successfully.', 'success')
-    console.log('sign in', form)
+    setIsLoading(true)
+    try {
+      const response = await login(form.email, form.password)
+      if (!response.success) {
+        showToast(response.message || 'Login failed.', 'error')
+        return
+      }
+      showToast('Signed in successfully.', 'success')
+      onSuccess?.()
+    } catch (error: unknown) {
+      let message = 'Unable to sign in. Please try again.'
+      if (error instanceof AxiosError && error.response?.data) {
+        const serverMessage = (error.response.data as any).message
+        message = serverMessage || message
+      } else if (error instanceof Error) {
+        message = error.message
+      }
+      showToast(message, 'error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -104,6 +127,7 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
                   placeholder="you@example.com"
                   value={form.email}
                   onChange={handleChange}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -116,6 +140,7 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
                   placeholder="Enter your password"
                   value={form.password}
                   onChange={handleChange}
+                  disabled={isLoading}
                 />
                 <p className="rap-field__hint">
                   Password must be at least 8 characters.
@@ -137,13 +162,15 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
                 className="rap-actions__primary"
                 type="button"
                 onClick={handleSubmit}
+                disabled={isLoading}
               >
-                Sign In
+                {isLoading ? 'Signing in…' : 'Sign In'}
               </button>
               <button
                 type="button"
                 className="rap-actions__link"
                 onClick={onSwitch}
+                disabled={isLoading}
               >
                 Don't have an account? Register
               </button>
@@ -153,7 +180,7 @@ export default function SignInPage({ onSwitch }: AuthPageProps) {
       </div>
 
       <footer className="rap-footer">
-        <span>� 2024 Architectural Archive. Secure Government Infrastructure.</span>
+        <span>© 2024 Architectural Archive. Secure Government Infrastructure.</span>
         <div className="rap-footer__links">
           <a href="#">Privacy</a>
           <a href="#">Terms</a>
