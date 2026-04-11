@@ -3,6 +3,7 @@ import RegisterPage from './pages/register'
 import SignInPage from './pages/login'
 import FileListPage from './pages/fileList'
 import { getAuthToken } from './services/authService'
+import CatePage from './pages/categoriesManagement.tsx'
 
 type AuthMode = 'register' | 'login'
 
@@ -15,7 +16,7 @@ function App() {
   }, [])
 
   if (authenticated) {
-    return <FileListPage onSignOut={() => setAuthenticated(false)} />
+    return <FileListPage onSignOut={() => setAuthenticated(false)}/>
   }
 
   return mode === 'register' ? (

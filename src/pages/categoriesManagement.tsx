@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, Tag, Loader2, X, Info } from "lucide-react";
 import axios from "axios";
 import "../styles/register.css";
 
-const API_BASE_URL = "http://localhost:8080/api/categories";
+const API_BASE_URL = "https://api-ltnc.thaily.id.vn/api/categories";
 
 interface Category {
   id: number;
