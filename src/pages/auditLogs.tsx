@@ -18,17 +18,8 @@ export default function AuditLogsPage() {
         page: p,
         size: 20,
       })
-      const data = res.data
-      if (data && typeof data === 'object' && 'content' in data) {
-        setLogs(data.content ?? [])
-        setTotalPages(data.totalPages ?? 0)
-      } else if (Array.isArray(data)) {
-        setLogs(data)
-        setTotalPages(0)
-      } else {
-        setLogs([])
-        setTotalPages(0)
-      }
+      setLogs(res.data.content ?? [])
+      setTotalPages(res.data.totalPages ?? 0)
     } catch {
       setError('Failed to load audit logs.')
     } finally {

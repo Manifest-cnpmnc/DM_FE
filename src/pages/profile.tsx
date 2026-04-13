@@ -59,7 +59,7 @@ export default function ProfilePage() {
   const handleChangePassword = async () => {
     if (!oldPw || !newPw) return
     if (newPw !== confirmPw) { showMsg('Passwords do not match.', true); return }
-    if (newPw.length < 8) { showMsg('Password must be at least 8 characters.', true); return }
+    if (newPw.length < 6) { showMsg('Password must be at least 6 characters.', true); return }
     setChangingPw(true)
     try {
       await changePassword({ oldPassword: oldPw, newPassword: newPw })

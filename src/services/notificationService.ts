@@ -1,6 +1,6 @@
 import apiClient from './apiClient'
 import type { ApiResponse } from './authService'
-import type { PaginatedData } from './documentService'
+import type { PaginatedData, PageQuery } from './documentService'
 
 export interface NotificationItem {
   id: number
@@ -10,10 +10,15 @@ export interface NotificationItem {
   createdAt: string
 }
 
-export const getNotifications = async (page = 0, size = 20) => {
-  const response = await apiClient.get<ApiResponse<PaginatedData<NotificationItem>>>('/api/notifications', {
-    params: { page, size },
-  })
+export const getNotifications = async (q?: PageQuery) => {
+  const params: Record<string, unknown> = {}
+  if (q?.page !== undefined) params.page = q.page
+  if (q?.size !== undefined) params.size = q.size
+  if (q?.sort !== undefined) params.sort = q.sort
+  const response = await apiClient.get<ApiResponse<PaginatedData<NotificationItem>>>(
+    '/api/notifications',
+    { params }
+  )
   return response.data
 }
 

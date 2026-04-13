@@ -10,6 +10,8 @@ import UsersPage from './pages/users'
 import ProfilePage from './pages/profile'
 import NotificationsPage from './pages/notifications'
 import AuditLogsPage from './pages/auditLogs'
+import OrganizationsPage from './pages/organizations'
+import OrganizationDetailPage from './pages/organizationDetail'
 import { getAuthToken } from './services/authService'
 
 type AuthMode = 'register' | 'login'
@@ -38,6 +40,8 @@ function App() {
         <Route element={<Layout onSignOut={() => setAuthenticated(false)} />}>
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:id" element={<DocumentDetailPage />} />
+          <Route path="/organizations" element={<OrganizationsPage />} />
+          <Route path="/organizations/:id" element={<OrganizationDetailPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/profile" element={<ProfilePage />} />

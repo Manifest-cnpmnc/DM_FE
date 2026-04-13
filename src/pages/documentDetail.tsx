@@ -4,8 +4,8 @@ import {
   getDocumentById,
   updateDocument,
   deleteDocument,
-  downloadDocument,
-  downloadDocumentVersion,
+  getDocumentDownloadUrl,
+  getDocumentVersionDownloadUrl,
   submitDocument,
   approveDocument,
   rejectDocument,
@@ -15,19 +15,43 @@ import {
   rollbackDocument,
   getWorkflowHistory,
   type DocumentItem,
+  type DocumentStatus,
+  type DocumentVisibility,
   type DocumentVersion,
   type WorkflowHistoryItem,
 } from '../services/documentService'
 import { getCategories, type CategoryItem } from '../services/categoryService'
+import { listMyOrganizations, type OrganizationItem } from '../services/organizationService'
 import { getAuthUser } from '../services/authService'
-import { ArrowLeft, Download, Trash2, Edit3, Save, X, Upload, RotateCcw, Send, CheckCircle, XCircle, Archive } from 'lucide-react'
+import {
+  ArrowLeft, Download, Trash2, Edit3, Save, X, Upload, RotateCcw,
+  Send, CheckCircle, XCircle, Archive,
+} from 'lucide-react'
 
-const statusColors: Record<string, string> = {
+const statusColors: Record<DocumentStatus, string> = {
   DRAFT: '#f59e0b',
   PENDING_REVIEW: '#6366f1',
   APPROVED: '#16a34a',
   REJECTED: '#dc2626',
   ARCHIVED: '#6b7280',
+}
+
+const visibilityLabel: Record<DocumentVisibility, string> = {
+  PRIVATE: 'Private',
+  ORG_INTERNAL: 'Org Internal',
+  ORG_PUBLIC: 'Org Public',
+}
+
+const formatBytes = (bytes: number): string => {
+  if (!bytes) return '—'
+  const units = ['B', 'KB', 'MB', 'GB']
+  let i = 0
+  let value = bytes
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024
+    i += 1
+  }
+  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
 }
 
 export default function DocumentDetailPage() {
@@ -38,6 +62,7 @@ export default function DocumentDetailPage() {
 
   const [doc, setDoc] = useState<DocumentItem | null>(null)
   const [categories, setCategories] = useState<CategoryItem[]>([])
+  const [myOrgs, setMyOrgs] = useState<OrganizationItem[]>([])
   const [versions, setVersions] = useState<DocumentVersion[]>([])
   const [workflow, setWorkflow] = useState<WorkflowHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,6 +76,8 @@ export default function DocumentDetailPage() {
   const [editDesc, setEditDesc] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editTags, setEditTags] = useState('')
+  const [editVisibility, setEditVisibility] = useState<DocumentVisibility>('PRIVATE')
+  const [editOrg, setEditOrg] = useState('')
   const [saving, setSaving] = useState(false)
 
   // Upload version
@@ -66,25 +93,30 @@ export default function DocumentDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
 
   const docId = Number(id)
+  const canRollback = user?.role === 'ADMIN' || user?.role === 'MANAGER'
 
   const fetchAll = async () => {
     setLoading(true)
     try {
-      const [docRes, catRes, verRes, wfRes] = await Promise.all([
+      const [docRes, catRes, verRes, wfRes, orgRes] = await Promise.all([
         getDocumentById(docId),
         getCategories(),
         getDocumentVersions(docId).catch(() => ({ data: [] as DocumentVersion[] })),
         getWorkflowHistory(docId).catch(() => ({ data: [] as WorkflowHistoryItem[] })),
+        listMyOrganizations({ page: 0, size: 100 }).catch(() => ({ data: { content: [] as OrganizationItem[] } })),
       ])
       setDoc(docRes.data)
       setCategories(catRes.data)
       setVersions(verRes.data)
       setWorkflow(wfRes.data)
-      // Init edit fields
+      setMyOrgs(('content' in orgRes.data ? orgRes.data.content : []) as OrganizationItem[])
+
       setEditTitle(docRes.data.title)
       setEditDesc(docRes.data.description ?? '')
-      setEditCategory(String(docRes.data.categoryId))
+      setEditCategory(docRes.data.categoryId ? String(docRes.data.categoryId) : '')
       setEditTags(docRes.data.tags?.join(', ') ?? '')
+      setEditVisibility(docRes.data.visibility ?? 'PRIVATE')
+      setEditOrg(docRes.data.organizationId ?? '')
     } catch {
       setError('Failed to load document.')
     } finally {
@@ -101,14 +133,20 @@ export default function DocumentDetailPage() {
   }
 
   const handleSaveEdit = async () => {
-    if (!editTitle.trim() || !editCategory) return
+    if (!editTitle.trim()) return
+    if (editVisibility !== 'PRIVATE' && !editOrg) {
+      showMsg('Organization is required for org visibility.', true)
+      return
+    }
     setSaving(true)
     try {
       await updateDocument(docId, {
         title: editTitle.trim(),
         description: editDesc.trim() || undefined,
-        categoryId: Number(editCategory),
+        categoryId: editCategory ? Number(editCategory) : undefined,
         tags: editTags ? editTags.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
+        visibility: editVisibility,
+        organizationId: editVisibility === 'PRIVATE' ? undefined : editOrg,
       })
       setEditing(false)
       showMsg('Document updated.')
@@ -131,17 +169,9 @@ export default function DocumentDetailPage() {
   }
 
   const handleDownload = async () => {
-    if (!doc) return
     try {
-      const blob = await downloadDocument(docId)
-      const ext = doc.latestFileUrl?.split('.').pop() || 'bin'
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `${doc.title}.${ext}`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(link.href)
+      const url = await getDocumentDownloadUrl(docId)
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch {
       showMsg('Download failed.', true)
     }
@@ -149,25 +179,25 @@ export default function DocumentDetailPage() {
 
   const handleDownloadVersion = async (v: DocumentVersion) => {
     try {
-      const blob = await downloadDocumentVersion(docId, v.versionNumber)
-      const ext = v.fileUrl?.split('.').pop() || 'bin'
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `${doc?.title ?? 'doc'}-v${v.versionNumber}.${ext}`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(link.href)
+      const url = await getDocumentVersionDownloadUrl(docId, v.versionNumber)
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch {
       showMsg('Download failed.', true)
     }
   }
 
   const handleUploadVersion = async () => {
-    if (!versionFile) return
+    if (!versionFile || !versionComment.trim()) {
+      showMsg('File and comment are required.', true)
+      return
+    }
+    if (versionFile.size === 0) {
+      showMsg('File is empty.', true)
+      return
+    }
     setUploadingVersion(true)
     try {
-      await uploadNewVersion(docId, versionFile, versionComment || undefined)
+      await uploadNewVersion(docId, versionFile, versionComment.trim())
       setShowVersionUpload(false)
       setVersionFile(null)
       setVersionComment('')
@@ -228,10 +258,9 @@ export default function DocumentDetailPage() {
       {error && <div className="alert alert--error">{error}</div>}
       {success && <div className="alert alert--success">{success}</div>}
 
-      {/* Header */}
       <div className="page__header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <h1 className="page__title">{doc.title}</h1>
             <span className="badge" style={{
               background: `${statusColors[doc.status] ?? '#e5e7eb'}22`,
@@ -240,8 +269,12 @@ export default function DocumentDetailPage() {
             }}>
               {doc.status.replace(/_/g, ' ')}
             </span>
+            <span className="badge badge--neutral">{visibilityLabel[doc.visibility] ?? doc.visibility}</span>
           </div>
-          <p className="page__subtitle">by {doc.createdByName} | v{doc.latestVersion}</p>
+          <p className="page__subtitle">
+            by {doc.createdByName} | v{doc.latestVersion}
+            {doc.organizationName ? ` | ${doc.organizationName}` : ''}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" className="btn btn--secondary btn--sm" onClick={handleDownload}><Download size={14} /> Download</button>
@@ -256,7 +289,6 @@ export default function DocumentDetailPage() {
         </div>
       </div>
 
-      {/* Workflow actions */}
       <div className="workflow-actions">
         {(doc.status === 'DRAFT' || doc.status === 'REJECTED') && (
           <button type="button" className="btn btn--primary btn--sm" onClick={() => setShowWorkflowModal('submit')}><Send size={14} /> Submit for Review</button>
@@ -273,7 +305,6 @@ export default function DocumentDetailPage() {
         <button type="button" className="btn btn--secondary btn--sm" onClick={() => setShowVersionUpload(true)}><Upload size={14} /> New Version</button>
       </div>
 
-      {/* Tabs */}
       <div className="tabs">
         {(['detail', 'versions', 'workflow'] as const).map((t) => (
           <button key={t} type="button" className={`tabs__tab ${tab === t ? 'tabs__tab--active' : ''}`} onClick={() => setTab(t)}>
@@ -282,7 +313,6 @@ export default function DocumentDetailPage() {
         ))}
       </div>
 
-      {/* Detail tab */}
       {tab === 'detail' && (
         editing ? (
           <div className="card">
@@ -297,10 +327,27 @@ export default function DocumentDetailPage() {
             <div className="form-field">
               <label className="form-field__label">Category</label>
               <select className="form-field__input" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
-                <option value="">Select</option>
+                <option value="">No category</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
+            <div className="form-field">
+              <label className="form-field__label">Visibility</label>
+              <select className="form-field__input" value={editVisibility} onChange={(e) => setEditVisibility(e.target.value as DocumentVisibility)}>
+                <option value="PRIVATE">Private</option>
+                <option value="ORG_INTERNAL">Org Internal</option>
+                <option value="ORG_PUBLIC">Org Public</option>
+              </select>
+            </div>
+            {editVisibility !== 'PRIVATE' && (
+              <div className="form-field">
+                <label className="form-field__label">Organization</label>
+                <select className="form-field__input" value={editOrg} onChange={(e) => setEditOrg(e.target.value)}>
+                  <option value="">Select organization</option>
+                  {myOrgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+            )}
             <div className="form-field">
               <label className="form-field__label">Tags</label>
               <input className="form-field__input" value={editTags} onChange={(e) => setEditTags(e.target.value)} placeholder="tag1, tag2" />
@@ -315,7 +362,9 @@ export default function DocumentDetailPage() {
             <div className="detail-grid">
               <div className="detail-item"><span className="detail-item__label">Title</span><span>{doc.title}</span></div>
               <div className="detail-item"><span className="detail-item__label">Description</span><span>{doc.description || '—'}</span></div>
-              <div className="detail-item"><span className="detail-item__label">Category</span><span>{doc.categoryName}</span></div>
+              <div className="detail-item"><span className="detail-item__label">Category</span><span>{doc.categoryName || '—'}</span></div>
+              <div className="detail-item"><span className="detail-item__label">Visibility</span><span>{visibilityLabel[doc.visibility] ?? doc.visibility}</span></div>
+              <div className="detail-item"><span className="detail-item__label">Organization</span><span>{doc.organizationName || '—'}</span></div>
               <div className="detail-item"><span className="detail-item__label">Tags</span><span>{doc.tags?.length ? doc.tags.join(', ') : '—'}</span></div>
               <div className="detail-item"><span className="detail-item__label">Author</span><span>{doc.createdByName}</span></div>
               <div className="detail-item"><span className="detail-item__label">Version</span><span>v{doc.latestVersion}</span></div>
@@ -326,7 +375,6 @@ export default function DocumentDetailPage() {
         )
       )}
 
-      {/* Versions tab */}
       {tab === 'versions' && (
         <div className="card">
           {versions.length === 0 ? (
@@ -337,6 +385,8 @@ export default function DocumentDetailPage() {
                 <thead>
                   <tr>
                     <th>Version</th>
+                    <th>File</th>
+                    <th>Size</th>
                     <th>Comment</th>
                     <th>Uploaded by</th>
                     <th>Date</th>
@@ -347,12 +397,16 @@ export default function DocumentDetailPage() {
                   {versions.map((v) => (
                     <tr key={v.id}>
                       <td><span className="badge">v{v.versionNumber}</span></td>
+                      <td>{v.fileName || '—'}</td>
+                      <td>{formatBytes(v.fileSize)}</td>
                       <td>{v.comment || '—'}</td>
-                      <td>{v.createdByName}</td>
+                      <td>{v.uploadedByName}</td>
                       <td>{new Date(v.createdAt).toLocaleString()}</td>
                       <td style={{ display: 'flex', gap: 6 }}>
                         <button type="button" className="btn btn--sm btn--secondary" onClick={() => handleDownloadVersion(v)}><Download size={14} /></button>
-                        <button type="button" className="btn btn--sm btn--ghost" onClick={() => handleRollback(v)}><RotateCcw size={14} /> Rollback</button>
+                        {canRollback && (
+                          <button type="button" className="btn btn--sm btn--ghost" onClick={() => handleRollback(v)}><RotateCcw size={14} /> Rollback</button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -363,7 +417,6 @@ export default function DocumentDetailPage() {
         </div>
       )}
 
-      {/* Workflow tab */}
       {tab === 'workflow' && (
         <div className="card">
           {workflow.length === 0 ? (
@@ -374,7 +427,7 @@ export default function DocumentDetailPage() {
                 <div key={w.id} className="timeline__item">
                   <div className="timeline__dot" />
                   <div className="timeline__content">
-                    <strong>{w.action}</strong> by {w.performedByName}
+                    <strong>{w.fromStatus || 'START'}</strong> → <strong>{w.toStatus}</strong> by {w.performedByName}
                     {w.comment && <p className="text-muted">{w.comment}</p>}
                     <p className="text-sm text-muted">{new Date(w.createdAt).toLocaleString()}</p>
                   </div>
@@ -385,7 +438,6 @@ export default function DocumentDetailPage() {
         </div>
       )}
 
-      {/* Upload Version Modal */}
       {showVersionUpload && (
         <div className="modal-overlay" onClick={() => !uploadingVersion && setShowVersionUpload(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -399,13 +451,13 @@ export default function DocumentDetailPage() {
                 <input ref={versionFileRef} type="file" className="form-field__input" onChange={(e) => setVersionFile(e.target.files?.[0] ?? null)} />
               </div>
               <div className="form-field">
-                <label className="form-field__label">Comment</label>
+                <label className="form-field__label">Comment *</label>
                 <input className="form-field__input" value={versionComment} onChange={(e) => setVersionComment(e.target.value)} placeholder="What changed?" />
               </div>
             </div>
             <div className="modal__footer">
               <button type="button" className="btn btn--ghost" onClick={() => setShowVersionUpload(false)} disabled={uploadingVersion}>Cancel</button>
-              <button type="button" className="btn btn--primary" onClick={handleUploadVersion} disabled={uploadingVersion || !versionFile}>
+              <button type="button" className="btn btn--primary" onClick={handleUploadVersion} disabled={uploadingVersion || !versionFile || !versionComment.trim()}>
                 <Upload size={16} /> {uploadingVersion ? 'Uploading...' : 'Upload'}
               </button>
             </div>
@@ -413,7 +465,6 @@ export default function DocumentDetailPage() {
         </div>
       )}
 
-      {/* Workflow Action Modal */}
       {showWorkflowModal && (
         <div className="modal-overlay" onClick={() => !actionLoading && setShowWorkflowModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>

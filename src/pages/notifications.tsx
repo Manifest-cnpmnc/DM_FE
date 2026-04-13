@@ -12,18 +12,9 @@ export default function NotificationsPage() {
   const fetchNotifications = async (p = page) => {
     setLoading(true)
     try {
-      const res = await getNotifications(p, 20)
-      const data = res.data
-      if (data && typeof data === 'object' && 'content' in data) {
-        setNotifications(data.content ?? [])
-        setTotalPages(data.totalPages ?? 0)
-      } else if (Array.isArray(data)) {
-        setNotifications(data)
-        setTotalPages(0)
-      } else {
-        setNotifications([])
-        setTotalPages(0)
-      }
+      const res = await getNotifications({ page: p, size: 20 })
+      setNotifications(res.data.content ?? [])
+      setTotalPages(res.data.totalPages ?? 0)
     } catch {
       setError('Failed to load notifications.')
     } finally {

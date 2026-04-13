@@ -57,8 +57,8 @@ export default function RequestAccessPage({ onSwitch, onSuccess }: AuthPageProps
     if (!form.phone.trim()) {
       errors.push('Phone is required.')
     }
-    if (form.password && !/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(form.password)) {
-      errors.push('Password must be at least 8 characters and include letters and numbers.')
+    if (form.password && form.password.length < 6) {
+      errors.push('Password must be at least 6 characters.')
     }
     if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
       errors.push('Passwords do not match.')
@@ -191,7 +191,7 @@ export default function RequestAccessPage({ onSwitch, onSuccess }: AuthPageProps
                   disabled={isLoading}
                 />
                 <p className="rap-field__hint">
-                  At least 8 characters, with letters and numbers.
+                  At least 6 characters.
                 </p>
               </div>
 

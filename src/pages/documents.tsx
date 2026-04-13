@@ -1,15 +1,16 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  getDocuments,
-  downloadDocument,
+  getPersonalDocuments,
+  getDocumentDownloadUrl,
   uploadDocument,
   type DocumentItem,
+  type DocumentStatus,
 } from '../services/documentService'
 import { getCategories, type CategoryItem } from '../services/categoryService'
-import { Search, Download, Plus, X, Upload } from 'lucide-react'
+import { Search, Download, Plus, X, Upload, Lock } from 'lucide-react'
 
-const statusColors: Record<string, string> = {
+const statusColors: Record<DocumentStatus, string> = {
   DRAFT: '#f59e0b',
   PENDING_REVIEW: '#6366f1',
   APPROVED: '#16a34a',
@@ -30,7 +31,6 @@ export default function DocumentsPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [downloadId, setDownloadId] = useState<number | null>(null)
 
-  // Upload modal
   const [showUpload, setShowUpload] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadTitle, setUploadTitle] = useState('')
@@ -40,22 +40,13 @@ export default function DocumentsPage() {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const fetchDocuments = async (
-    p: number,
-    filters: { title: string; status: string; category: string }
-  ) => {
+  const fetchDocuments = async (p: number) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await getDocuments({
-        title: filters.title || undefined,
-        status: filters.status || undefined,
-        categoryId: filters.category ? Number(filters.category) : undefined,
-        page: p,
-        size: 20,
-      })
-      setDocuments(response.data.content)
-      setTotalPages(response.data.totalPages)
+      const res = await getPersonalDocuments({ page: p, size: 20 })
+      setDocuments(res.data.content)
+      setTotalPages(res.data.totalPages)
     } catch {
       setError('Could not load documents.')
     } finally {
@@ -63,38 +54,28 @@ export default function DocumentsPage() {
     }
   }
 
-  const fetchCategories = async () => {
-    try {
-      const res = await getCategories()
-      setCategories(Array.isArray(res.data) ? res.data : [])
-    } catch { /* ignore */ }
-  }
-
   useEffect(() => {
-    fetchCategories()
+    getCategories().then((r) => setCategories(r.data)).catch(() => undefined)
   }, [])
 
   useEffect(() => {
-    fetchDocuments(page, { title: searchTitle, status: statusFilter, category: categoryFilter })
-  }, [page, statusFilter, categoryFilter])
+    fetchDocuments(page)
+  }, [page])
 
-  const handleSearch = () => {
-    setPage(0)
-    fetchDocuments(0, { title: searchTitle, status: statusFilter, category: categoryFilter })
-  }
+  const filtered = useMemo(() => {
+    return documents.filter((d) => {
+      if (searchTitle && !d.title.toLowerCase().includes(searchTitle.toLowerCase())) return false
+      if (statusFilter && d.status !== statusFilter) return false
+      if (categoryFilter && String(d.categoryId) !== categoryFilter) return false
+      return true
+    })
+  }, [documents, searchTitle, statusFilter, categoryFilter])
 
   const handleDownload = async (doc: DocumentItem) => {
     setDownloadId(doc.id)
     try {
-      const blob = await downloadDocument(doc.id)
-      const ext = doc.latestFileUrl?.split('.').pop() || 'bin'
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `${doc.title}.${ext}`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(link.href)
+      const url = await getDocumentDownloadUrl(doc.id)
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch {
       setError('Download failed.')
     } finally {
@@ -102,23 +83,34 @@ export default function DocumentsPage() {
     }
   }
 
+  const resetUpload = () => {
+    setUploadFile(null)
+    setUploadTitle('')
+    setUploadDesc('')
+    setUploadCategory('')
+    setUploadTags('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleUpload = async () => {
-    if (!uploadFile || !uploadTitle.trim() || !uploadCategory) return
+    if (!uploadFile || !uploadTitle.trim()) return
+    if (uploadFile.size === 0) {
+      setError('File is empty.')
+      return
+    }
     setUploading(true)
     try {
       await uploadDocument(uploadFile, {
         title: uploadTitle.trim(),
         description: uploadDesc.trim() || undefined,
-        categoryId: Number(uploadCategory),
+        categoryId: uploadCategory ? Number(uploadCategory) : undefined,
         tags: uploadTags ? uploadTags.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
+        visibility: 'PRIVATE',
       })
       setShowUpload(false)
-      setUploadFile(null)
-      setUploadTitle('')
-      setUploadDesc('')
-      setUploadCategory('')
-      setUploadTags('')
-      fetchDocuments(0, { title: searchTitle, status: statusFilter, category: categoryFilter })
+      resetUpload()
+      setPage(0)
+      fetchDocuments(0)
     } catch {
       setError('Upload failed.')
     } finally {
@@ -130,15 +122,17 @@ export default function DocumentsPage() {
     <div className="page">
       <div className="page__header">
         <div>
-          <h1 className="page__title">Documents</h1>
-          <p className="page__subtitle">Browse, upload, and manage documents.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Lock size={22} />
+            <h1 className="page__title">My Documents</h1>
+          </div>
+          <p className="page__subtitle">Private files in your personal workspace. Not visible to anyone else.</p>
         </div>
         <button type="button" className="btn btn--primary" onClick={() => setShowUpload(true)}>
-          <Plus size={18} /> Upload Document
+          <Plus size={18} /> Upload
         </button>
       </div>
 
-      {/* Filters */}
       <div className="filters">
         <div className="filters__field filters__field--grow">
           <Search size={16} className="filters__icon" />
@@ -148,7 +142,6 @@ export default function DocumentsPage() {
             placeholder="Search by title..."
             value={searchTitle}
             onChange={(e) => setSearchTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
         <select className="filters__select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
@@ -161,16 +154,12 @@ export default function DocumentsPage() {
         </select>
         <select className="filters__select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
           <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button type="button" className="btn btn--secondary" onClick={handleSearch}>Search</button>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
 
-      {/* Table */}
       <div className="table-wrap">
         <table className="table">
           <thead>
@@ -178,24 +167,23 @@ export default function DocumentsPage() {
               <th>Title</th>
               <th>Category</th>
               <th>Status</th>
-              <th>Author</th>
               <th>Updated</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="table__empty">Loading...</td></tr>
-            ) : documents.length === 0 ? (
-              <tr><td colSpan={6} className="table__empty">No documents found.</td></tr>
+              <tr><td colSpan={5} className="table__empty">Loading...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={5} className="table__empty">No documents found.</td></tr>
             ) : (
-              documents.map((doc) => (
+              filtered.map((doc) => (
                 <tr key={doc.id} className="table__row--clickable" onClick={() => navigate(`/documents/${doc.id}`)}>
                   <td>
                     <div className="table__title">{doc.title}</div>
                     <div className="table__desc">{doc.description}</div>
                   </td>
-                  <td>{doc.categoryName}</td>
+                  <td>{doc.categoryName ?? '—'}</td>
                   <td>
                     <span className="badge" style={{
                       background: `${statusColors[doc.status] ?? '#e5e7eb'}22`,
@@ -205,7 +193,6 @@ export default function DocumentsPage() {
                       {doc.status.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td>{doc.createdByName}</td>
                   <td>{new Date(doc.updatedAt).toLocaleDateString()}</td>
                   <td>
                     <button
@@ -215,7 +202,7 @@ export default function DocumentsPage() {
                       disabled={downloadId === doc.id}
                     >
                       <Download size={14} />
-                      {downloadId === doc.id ? 'Downloading...' : 'Download'}
+                      {downloadId === doc.id ? 'Opening…' : 'Download'}
                     </button>
                   </td>
                 </tr>
@@ -225,7 +212,6 @@ export default function DocumentsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
           <button type="button" className="btn btn--sm btn--ghost" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
@@ -234,15 +220,17 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* Upload Modal */}
       {showUpload && (
         <div className="modal-overlay" onClick={() => !uploading && setShowUpload(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal__header">
-              <h2 className="modal__title">Upload Document</h2>
+              <h2 className="modal__title">Upload to My Documents</h2>
               <button type="button" className="btn btn--icon" onClick={() => !uploading && setShowUpload(false)}><X size={20} /></button>
             </div>
             <div className="modal__body">
+              <div className="notice-strip">
+                <Lock size={14} /> This file will be <strong>private</strong> to you. Upload to an organization from the org page if you want to share it.
+              </div>
               <div className="form-field">
                 <label className="form-field__label">Title *</label>
                 <input className="form-field__input" value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} placeholder="Document title" />
@@ -252,9 +240,9 @@ export default function DocumentsPage() {
                 <textarea className="form-field__textarea" value={uploadDesc} onChange={(e) => setUploadDesc(e.target.value)} placeholder="Optional description" rows={3} />
               </div>
               <div className="form-field">
-                <label className="form-field__label">Category *</label>
+                <label className="form-field__label">Category</label>
                 <select className="form-field__input" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
-                  <option value="">Select category</option>
+                  <option value="">No category</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -269,7 +257,7 @@ export default function DocumentsPage() {
             </div>
             <div className="modal__footer">
               <button type="button" className="btn btn--ghost" onClick={() => setShowUpload(false)} disabled={uploading}>Cancel</button>
-              <button type="button" className="btn btn--primary" onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim() || !uploadCategory}>
+              <button type="button" className="btn btn--primary" onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()}>
                 <Upload size={16} /> {uploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>

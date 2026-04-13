@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logout, getAuthUser } from '../services/authService'
-import { FileText, FolderOpen, Users, Bell, ClipboardList, User, LogOut } from 'lucide-react'
+import { FileText, FolderOpen, Users, Bell, ClipboardList, User, LogOut, Building2 } from 'lucide-react'
 
 interface LayoutProps {
   onSignOut: () => void
@@ -18,7 +18,8 @@ export default function Layout({ onSignOut }: LayoutProps) {
   }
 
   const links = [
-    { to: '/documents', label: 'Documents', icon: FileText },
+    { to: '/documents', label: 'My Documents', icon: FileText },
+    { to: '/organizations', label: 'Organizations', icon: Building2 },
     { to: '/categories', label: 'Categories', icon: FolderOpen },
     ...(isAdmin ? [{ to: '/users', label: 'Users', icon: Users }] : []),
     { to: '/notifications', label: 'Notifications', icon: Bell },

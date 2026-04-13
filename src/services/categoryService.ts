@@ -6,7 +6,11 @@ export interface CategoryItem {
   name: string
   description: string
   createdAt: string
-  updatedAt: string
+}
+
+export interface CategoryRequest {
+  name: string
+  description?: string
 }
 
 export const getCategories = async () => {
@@ -19,12 +23,12 @@ export const getCategoryById = async (id: number) => {
   return response.data
 }
 
-export const createCategory = async (data: { name: string; description: string }) => {
+export const createCategory = async (data: CategoryRequest) => {
   const response = await apiClient.post<ApiResponse<CategoryItem>>('/api/categories', data)
   return response.data
 }
 
-export const updateCategory = async (id: number, data: { name: string; description: string }) => {
+export const updateCategory = async (id: number, data: CategoryRequest) => {
   const response = await apiClient.put<ApiResponse<CategoryItem>>(`/api/categories/${id}`, data)
   return response.data
 }

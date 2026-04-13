@@ -43,9 +43,6 @@ export default function SignInPage({ onSwitch, onSuccess }: AuthPageProps) {
     if (!form.password) {
       errors.push('Password is required.')
     }
-    if (form.password && form.password.length < 8) {
-      errors.push('Password must be at least 8 characters.')
-    }
 
     if (errors.length > 0) {
       showToast(errors.join(' '), 'error')
@@ -143,7 +140,7 @@ export default function SignInPage({ onSwitch, onSuccess }: AuthPageProps) {
                   disabled={isLoading}
                 />
                 <p className="rap-field__hint">
-                  Password must be at least 8 characters.
+                  Enter the password you registered with.
                 </p>
               </div>
             </div>
