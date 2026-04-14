@@ -56,7 +56,10 @@ export default function CategoriesPage() {
   }
 
   const handleSave = async () => {
-    if (!formName.trim()) return
+    if (!formName.trim()) {
+      showMsg('Name is required.', true)
+      return
+    }
     setSaving(true)
     try {
       if (editingId) {

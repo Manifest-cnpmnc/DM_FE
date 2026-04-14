@@ -12,6 +12,8 @@ import NotificationsPage from './pages/notifications'
 import AuditLogsPage from './pages/auditLogs'
 import OrganizationsPage from './pages/organizations'
 import OrganizationDetailPage from './pages/organizationDetail'
+import ExplorePage from './pages/explore'
+import AdminDocumentsPage from './pages/adminDocuments'
 import { getAuthToken } from './services/authService'
 
 type AuthMode = 'register' | 'login'
@@ -40,6 +42,8 @@ function App() {
         <Route element={<Layout onSignOut={() => setAuthenticated(false)} />}>
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:id" element={<DocumentDetailPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/explore/:id" element={<DocumentDetailPage />} />
           <Route path="/organizations" element={<OrganizationsPage />} />
           <Route path="/organizations/:id" element={<OrganizationDetailPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
@@ -47,6 +51,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/admin/documents" element={<AdminDocumentsPage />} />
           <Route path="*" element={<Navigate to="/documents" replace />} />
         </Route>
       </Routes>

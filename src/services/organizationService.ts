@@ -133,3 +133,11 @@ export const removeOrganizationMember = async (id: string, userId: string) => {
   )
   return response.data
 }
+
+export const transferOrganizationOwnership = async (id: string, newOwnerUserId: string) => {
+  const response = await apiClient.post<ApiResponse<OrganizationItem>>(
+    `/api/organizations/${id}/transfer-ownership`,
+    { newOwnerUserId }
+  )
+  return response.data
+}

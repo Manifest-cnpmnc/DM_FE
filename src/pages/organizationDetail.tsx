@@ -8,6 +8,7 @@ import {
   addOrganizationMember,
   updateOrganizationMemberRole,
   removeOrganizationMember,
+  transferOrganizationOwnership,
   type OrganizationItem,
   type OrganizationMember,
   type OrgRole,
@@ -26,6 +27,7 @@ import { getAuthUser } from '../services/authService'
 import {
   ArrowLeft, Building2, Edit3, Save, Trash2, UserPlus, X,
   FileText, Users as UsersIcon, Settings, Plus, Upload, Download, Globe, Lock, Search,
+  Crown,
 } from 'lucide-react'
 
 type TabKey = 'overview' | 'documents' | 'members' | 'settings'
@@ -42,6 +44,7 @@ const statusColors: Record<DocumentStatus, string> = {
 
 const visibilityLabel: Record<DocumentVisibility, string> = {
   PRIVATE: 'Private',
+  PUBLIC: 'Public',
   ORG_INTERNAL: 'Internal',
   ORG_PUBLIC: 'Public',
 }
@@ -92,12 +95,18 @@ export default function OrganizationDetailPage() {
   const [addRole, setAddRole] = useState<OrgRole>('VIEWER')
   const [adding, setAdding] = useState(false)
 
+  // Transfer ownership
+  const [showTransfer, setShowTransfer] = useState(false)
+  const [transferTarget, setTransferTarget] = useState('')
+  const [transferring, setTransferring] = useState(false)
+
   const myMembership = members.find((m) => m.userId === user?.id)
   const myOrgRole = myMembership?.orgRole
   const canManageMembers = isSystemAdmin || myOrgRole === 'ADMIN' || myOrgRole === 'OWNER'
   const canChangeRoles = isSystemAdmin || myOrgRole === 'OWNER'
   const canEditOrg = isSystemAdmin || myOrgRole === 'ADMIN' || myOrgRole === 'OWNER'
   const canDeleteOrg = isSystemAdmin || myOrgRole === 'OWNER'
+  const canTransferOwnership = isSystemAdmin || myOrgRole === 'OWNER'
   const canUpload =
     isSystemAdmin ||
     myOrgRole === 'EDITOR' ||
@@ -164,7 +173,11 @@ export default function OrganizationDetailPage() {
   }, [docs, docSearch, docStatus])
 
   const handleSaveOrg = async () => {
-    if (!id || !editName.trim()) return
+    if (!id) return
+    if (!editName.trim()) {
+      showMsg('Name is required.', true)
+      return
+    }
     setSaving(true)
     try {
       await updateOrganization(id, {
@@ -192,7 +205,15 @@ export default function OrganizationDetailPage() {
   }
 
   const handleAddMember = async () => {
-    if (!id || !addEmail.trim()) return
+    if (!id) return
+    if (!addEmail.trim()) {
+      showMsg('Email is required.', true)
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addEmail.trim())) {
+      showMsg('Invalid email format.', true)
+      return
+    }
     setAdding(true)
     try {
       await addOrganizationMember(id, { email: addEmail.trim(), orgRole: addRole })
@@ -230,6 +251,27 @@ export default function OrganizationDetailPage() {
     }
   }
 
+  const handleTransferOwnership = async () => {
+    if (!id) return
+    if (!transferTarget) {
+      showMsg('Please select a member to transfer ownership to.', true)
+      return
+    }
+    if (!confirm('Transfer ownership? You will become ADMIN of this organization, not OWNER.')) return
+    setTransferring(true)
+    try {
+      await transferOrganizationOwnership(id, transferTarget)
+      setShowTransfer(false)
+      setTransferTarget('')
+      showMsg('Ownership transferred.')
+      fetchCore()
+    } catch {
+      showMsg('Transfer failed.', true)
+    } finally {
+      setTransferring(false)
+    }
+  }
+
   const handleDownload = async (doc: DocumentItem) => {
     setDownloadId(doc.id)
     try {
@@ -253,7 +295,15 @@ export default function OrganizationDetailPage() {
   }
 
   const handleUpload = async () => {
-    if (!id || !uploadFile || !uploadTitle.trim()) return
+    if (!id) return
+    if (!uploadTitle.trim()) {
+      showMsg('Title is required.', true)
+      return
+    }
+    if (!uploadFile) {
+      showMsg('Please choose a file to upload.', true)
+      return
+    }
     if (uploadFile.size === 0) {
       showMsg('File is empty.', true)
       return
@@ -522,6 +572,20 @@ export default function OrganizationDetailPage() {
             </button>
           </div>
 
+          {canTransferOwnership && (
+            <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid var(--color-border-soft)' }}>
+              <h4 style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Crown size={16} /> Transfer ownership
+              </h4>
+              <p className="text-muted text-sm" style={{ margin: '0 0 12px' }}>
+                Pass the OWNER role to an existing member. You will become ADMIN of this organization.
+              </p>
+              <button type="button" className="btn btn--secondary btn--sm" onClick={() => { setTransferTarget(''); setShowTransfer(true) }}>
+                <Crown size={14} /> Transfer Ownership
+              </button>
+            </div>
+          )}
+
           {canDeleteOrg && (
             <div className="danger-zone">
               <h4 style={{ margin: '0 0 8px', color: '#b91c1c' }}>Danger zone</h4>
@@ -533,6 +597,39 @@ export default function OrganizationDetailPage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {showTransfer && (
+        <div className="modal-overlay" onClick={() => !transferring && setShowTransfer(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal__header">
+              <h2 className="modal__title"><Crown size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />Transfer Ownership</h2>
+              <button type="button" className="btn btn--icon" onClick={() => setShowTransfer(false)}><X size={20} /></button>
+            </div>
+            <div className="modal__body">
+              <div className="notice-strip">
+                <Crown size={14} /> The target member will become the new <strong>OWNER</strong>. You become <strong>ADMIN</strong>.
+              </div>
+              <div className="form-field">
+                <label className="form-field__label">New owner *</label>
+                <select className="form-field__input" value={transferTarget} onChange={(e) => setTransferTarget(e.target.value)}>
+                  <option value="">Select a member</option>
+                  {members.filter((m) => m.orgRole !== 'OWNER').map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      {m.fullName} ({m.email}) — {m.orgRole}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="modal__footer">
+              <button type="button" className="btn btn--ghost" onClick={() => setShowTransfer(false)} disabled={transferring}>Cancel</button>
+              <button type="button" className="btn btn--primary" onClick={handleTransferOwnership} disabled={transferring || !transferTarget}>
+                <Crown size={16} /> {transferring ? 'Transferring...' : 'Transfer'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

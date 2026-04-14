@@ -48,7 +48,12 @@ export default function UsersPage() {
   useEffect(() => { fetchUsers() }, [])
 
   const handleCreate = async () => {
-    if (!formEmail.trim() || !formPassword || !formName.trim() || !formRole) return
+    if (!formName.trim()) { showMsg('Full name is required.', true); return }
+    if (!formEmail.trim()) { showMsg('Email is required.', true); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail.trim())) { showMsg('Invalid email format.', true); return }
+    if (!formPassword) { showMsg('Password is required.', true); return }
+    if (formPassword.length < 6) { showMsg('Password must be at least 6 characters.', true); return }
+    if (!formRole) { showMsg('Role is required.', true); return }
     setSaving(true)
     try {
       await createUser({

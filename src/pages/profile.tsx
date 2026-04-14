@@ -43,7 +43,10 @@ export default function ProfilePage() {
   useEffect(() => { fetchProfile() }, [])
 
   const handleSave = async () => {
-    if (!editName.trim()) return
+    if (!editName.trim()) {
+      showMsg('Full name is required.', true)
+      return
+    }
     setSaving(true)
     try {
       await updateProfile({ fullName: editName.trim(), phone: editPhone.trim() })
@@ -57,9 +60,10 @@ export default function ProfilePage() {
   }
 
   const handleChangePassword = async () => {
-    if (!oldPw || !newPw) return
-    if (newPw !== confirmPw) { showMsg('Passwords do not match.', true); return }
+    if (!oldPw) { showMsg('Current password is required.', true); return }
+    if (!newPw) { showMsg('New password is required.', true); return }
     if (newPw.length < 6) { showMsg('Password must be at least 6 characters.', true); return }
+    if (newPw !== confirmPw) { showMsg('Passwords do not match.', true); return }
     setChangingPw(true)
     try {
       await changePassword({ oldPassword: oldPw, newPassword: newPw })

@@ -6,9 +6,10 @@ import {
   uploadDocument,
   type DocumentItem,
   type DocumentStatus,
+  type DocumentVisibility,
 } from '../services/documentService'
 import { getCategories, type CategoryItem } from '../services/categoryService'
-import { Search, Download, Plus, X, Upload, Lock } from 'lucide-react'
+import { Search, Download, Plus, X, Upload, Lock, Globe } from 'lucide-react'
 
 const statusColors: Record<DocumentStatus, string> = {
   DRAFT: '#f59e0b',
@@ -37,6 +38,7 @@ export default function DocumentsPage() {
   const [uploadDesc, setUploadDesc] = useState('')
   const [uploadCategory, setUploadCategory] = useState('')
   const [uploadTags, setUploadTags] = useState('')
+  const [uploadVisibility, setUploadVisibility] = useState<DocumentVisibility>('PRIVATE')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -89,11 +91,19 @@ export default function DocumentsPage() {
     setUploadDesc('')
     setUploadCategory('')
     setUploadTags('')
+    setUploadVisibility('PRIVATE')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleUpload = async () => {
-    if (!uploadFile || !uploadTitle.trim()) return
+    if (!uploadTitle.trim()) {
+      setError('Title is required.')
+      return
+    }
+    if (!uploadFile) {
+      setError('Please choose a file to upload.')
+      return
+    }
     if (uploadFile.size === 0) {
       setError('File is empty.')
       return
@@ -105,7 +115,7 @@ export default function DocumentsPage() {
         description: uploadDesc.trim() || undefined,
         categoryId: uploadCategory ? Number(uploadCategory) : undefined,
         tags: uploadTags ? uploadTags.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
-        visibility: 'PRIVATE',
+        visibility: uploadVisibility,
       })
       setShowUpload(false)
       resetUpload()
@@ -122,11 +132,8 @@ export default function DocumentsPage() {
     <div className="page">
       <div className="page__header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Lock size={22} />
-            <h1 className="page__title">My Documents</h1>
-          </div>
-          <p className="page__subtitle">Private files in your personal workspace. Not visible to anyone else.</p>
+          <h1 className="page__title">My Documents</h1>
+          <p className="page__subtitle">Files in your personal workspace — private by default, optionally public.</p>
         </div>
         <button type="button" className="btn btn--primary" onClick={() => setShowUpload(true)}>
           <Plus size={18} /> Upload
@@ -166,6 +173,7 @@ export default function DocumentsPage() {
             <tr>
               <th>Title</th>
               <th>Category</th>
+              <th>Visibility</th>
               <th>Status</th>
               <th>Updated</th>
               <th>Actions</th>
@@ -173,9 +181,9 @@ export default function DocumentsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="table__empty">Loading...</td></tr>
+              <tr><td colSpan={6} className="table__empty">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} className="table__empty">No documents found.</td></tr>
+              <tr><td colSpan={6} className="table__empty">No documents found.</td></tr>
             ) : (
               filtered.map((doc) => (
                 <tr key={doc.id} className="table__row--clickable" onClick={() => navigate(`/documents/${doc.id}`)}>
@@ -184,6 +192,12 @@ export default function DocumentsPage() {
                     <div className="table__desc">{doc.description}</div>
                   </td>
                   <td>{doc.categoryName ?? '—'}</td>
+                  <td>
+                    <span className="badge badge--neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {doc.visibility === 'PUBLIC' ? <Globe size={11} /> : <Lock size={11} />}
+                      {doc.visibility === 'PUBLIC' ? 'Public' : 'Private'}
+                    </span>
+                  </td>
                   <td>
                     <span className="badge" style={{
                       background: `${statusColors[doc.status] ?? '#e5e7eb'}22`,
@@ -229,7 +243,9 @@ export default function DocumentsPage() {
             </div>
             <div className="modal__body">
               <div className="notice-strip">
-                <Lock size={14} /> This file will be <strong>private</strong> to you. Upload to an organization from the org page if you want to share it.
+                {uploadVisibility === 'PUBLIC'
+                  ? <><Globe size={14} /> This file will be <strong>public</strong> — any signed-in user can discover and download it.</>
+                  : <><Lock size={14} /> This file will be <strong>private</strong> to you. You can still share it with specific people later via collaborators.</>}
               </div>
               <div className="form-field">
                 <label className="form-field__label">Title *</label>
@@ -238,6 +254,13 @@ export default function DocumentsPage() {
               <div className="form-field">
                 <label className="form-field__label">Description</label>
                 <textarea className="form-field__textarea" value={uploadDesc} onChange={(e) => setUploadDesc(e.target.value)} placeholder="Optional description" rows={3} />
+              </div>
+              <div className="form-field">
+                <label className="form-field__label">Visibility *</label>
+                <select className="form-field__input" value={uploadVisibility} onChange={(e) => setUploadVisibility(e.target.value as DocumentVisibility)}>
+                  <option value="PRIVATE">Private — only you (+ collaborators)</option>
+                  <option value="PUBLIC">Public — any signed-in user</option>
+                </select>
               </div>
               <div className="form-field">
                 <label className="form-field__label">Category</label>

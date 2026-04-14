@@ -2,7 +2,8 @@ import apiClient from './apiClient'
 import type { ApiResponse } from './authService'
 
 export type DocumentStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'ARCHIVED'
-export type DocumentVisibility = 'PRIVATE' | 'ORG_INTERNAL' | 'ORG_PUBLIC'
+export type DocumentVisibility = 'PRIVATE' | 'PUBLIC' | 'ORG_INTERNAL' | 'ORG_PUBLIC'
+export type CollaboratorPermission = 'READ' | 'WRITE'
 
 export interface DocumentItem {
   id: number
@@ -99,6 +100,14 @@ export const getDocuments = async (q?: PageQuery) => {
 export const getPersonalDocuments = async (q?: PageQuery) => {
   const response = await apiClient.get<ApiResponse<PaginatedData<DocumentItem>>>(
     '/api/documents/personal',
+    { params: buildPageParams(q) }
+  )
+  return response.data
+}
+
+export const getPublicDocuments = async (q?: PageQuery) => {
+  const response = await apiClient.get<ApiResponse<PaginatedData<DocumentItem>>>(
+    '/api/documents/public',
     { params: buildPageParams(q) }
   )
   return response.data
@@ -204,3 +213,53 @@ export const submitDocument = (id: number, comment?: string) => workflowAction(i
 export const approveDocument = (id: number, comment?: string) => workflowAction(id, 'approve', comment)
 export const rejectDocument = (id: number, comment?: string) => workflowAction(id, 'reject', comment)
 export const archiveDocument = (id: number, comment?: string) => workflowAction(id, 'archive', comment)
+
+// ── Collaborators ─────────────────────────────────────────────────
+
+export interface DocumentCollaborator {
+  id: number
+  userId: string
+  email: string
+  fullName: string
+  permission: CollaboratorPermission
+  addedById: string
+  addedByName: string
+  addedAt: string
+}
+
+export const listCollaborators = async (id: number) => {
+  const response = await apiClient.get<ApiResponse<DocumentCollaborator[]>>(
+    `/api/documents/${id}/collaborators`
+  )
+  return response.data
+}
+
+export const addCollaborator = async (
+  id: number,
+  data: { email: string; permission: CollaboratorPermission }
+) => {
+  const response = await apiClient.post<ApiResponse<DocumentCollaborator>>(
+    `/api/documents/${id}/collaborators`,
+    data
+  )
+  return response.data
+}
+
+export const updateCollaboratorPermission = async (
+  id: number,
+  userId: string,
+  permission: CollaboratorPermission
+) => {
+  const response = await apiClient.put<ApiResponse<DocumentCollaborator>>(
+    `/api/documents/${id}/collaborators/${userId}`,
+    { permission }
+  )
+  return response.data
+}
+
+export const removeCollaborator = async (id: number, userId: string) => {
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/api/documents/${id}/collaborators/${userId}`
+  )
+  return response.data
+}

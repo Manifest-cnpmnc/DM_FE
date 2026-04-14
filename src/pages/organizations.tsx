@@ -67,9 +67,24 @@ export default function OrganizationsPage() {
   }, [page])
 
   const handleCreate = async () => {
-    if (!formName.trim() || !formSlug.trim()) return
+    if (!formName.trim()) {
+      showMsg('Name is required.', true)
+      return
+    }
+    if (!formSlug.trim()) {
+      showMsg('Slug is required.', true)
+      return
+    }
     if (!/^[a-z0-9-]+$/.test(formSlug)) {
       showMsg('Slug must be lowercase letters, numbers, and hyphens only.', true)
+      return
+    }
+    if (formName.length > 100) {
+      showMsg('Name must be 100 characters or fewer.', true)
+      return
+    }
+    if (formSlug.length > 64) {
+      showMsg('Slug must be 64 characters or fewer.', true)
       return
     }
     setSaving(true)
