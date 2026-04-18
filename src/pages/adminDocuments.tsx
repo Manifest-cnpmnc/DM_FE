@@ -7,6 +7,7 @@ import {
   type DocumentItem,
   type DocumentStatus,
   type DocumentVisibility,
+  getPersonalDocuments,
 } from '../services/documentService'
 import { getAuthUser } from '../services/authService'
 import { Search, Download, ShieldAlert, Lock, Globe, Building2, Trash2 } from 'lucide-react'
@@ -108,6 +109,20 @@ export default function AdminDocumentsPage() {
       setDownloadId(null)
     }
   }
+
+  const fetchDocuments = async (p: number) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await getPersonalDocuments({ page: p, size: 20 })
+        setDocuments(res.data.content)
+        setTotalPages(res.data.totalPages)
+      } catch {
+        setError('Could not load documents.')
+      } finally {
+        setLoading(false)
+      }
+    }
 
   const handleSelectDocument = (id: number, checked: boolean) => {
     setSelectedDocuments(prev => {
