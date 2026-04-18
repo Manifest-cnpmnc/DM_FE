@@ -593,8 +593,12 @@ code {
 .table__actions {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
+}
+
+.table__actions .btn {
+  white-space: nowrap;
 }
 
 .table__desc {
@@ -1001,7 +1005,8 @@ select.form-field__input {
 
 /* ── NOTICE STRIP ──────────────────────────────────────────────── */
 .notice-strip {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 10px;
   padding: 11px 14px;
@@ -1011,6 +1016,21 @@ select.form-field__input {
   border-radius: 10px;
   font-size: 0.85rem;
   color: var(--color-brand-800);
+}
+
+.notice-strip__text {
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.notice-strip__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notice-strip strong {
+  white-space: nowrap;
 }
 
 /* ── DANGER ZONE ───────────────────────────────────────────────── */

@@ -284,7 +284,11 @@ export default function DocumentsPage() {
                     </span>
                   </td>
                   <td>{new Date(doc.updatedAt).toLocaleDateString()}</td>
-                  <td className="table__actions" onClick={(e) => e.stopPropagation()}>
+                  <td 
+                    className="table__actions" 
+                    style={{display: 'flex', flexDirection: 'row'}}
+                     
+                    onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="btn btn--sm btn--secondary"
@@ -326,9 +330,18 @@ export default function DocumentsPage() {
             </div>
             <div className="modal__body">
               <div className="notice-strip">
-                {uploadVisibility === 'PUBLIC'
-                  ? <><Globe size={14} /> This file will be <strong>public</strong> — any signed-in user can discover and download it.</>
-                  : <><Lock size={14} /> This file will be <strong>private</strong> to you. You can still share it with specific people later via collaborators.</>}
+                <div
+                  style={{display: 'inline-block'}} 
+                  className="notice-strip__icon">
+                  {uploadVisibility === 'PUBLIC' ? <Globe size={14} /> : <Lock size={14} />}
+                </div>
+                <div
+                  style={{display: 'inline-block'}} 
+                  className="notice-strip__text">
+                  {uploadVisibility === 'PUBLIC'
+                    ? <>This file will be <strong>public</strong> — any signed-in user can discover and download it.</>
+                    : <>This file will be <strong>private</strong> to you. You can still share it with specific people later via collaborators.</>}
+                </div>
               </div>
               <div className="form-field">
                 <label className="form-field__label">Title *</label>
