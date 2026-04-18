@@ -3,6 +3,7 @@ import { AxiosError } from 'axios'
 import heroImg from '../assets/hero.png'
 import '../styles/register.css'
 import { login } from '../services/authService'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface LoginFormState {
   email: string
@@ -21,6 +22,7 @@ export default function SignInPage({ onSwitch, onSuccess }: AuthPageProps) {
   })
   const [toast, setToast] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showPassword, setShowPassword] = useState<boolean>(false)
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -130,15 +132,25 @@ export default function SignInPage({ onSwitch, onSuccess }: AuthPageProps) {
 
               <div className="rap-field rap-field--full">
                 <label className="rap-field__label">Password</label>
-                <input
-                  className="rap-field__input"
-                  type="password"
-                  name="password"
-                  placeholder="Enter your password"
-                  value={form.password}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
+                <div className="rap-field__input-wrapper">
+                  <input
+                    className="rap-field__input"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    placeholder="Enter your password"
+                    value={form.password}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    className="rap-field__toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 <p className="rap-field__hint">
                   Enter the password you registered with.
                 </p>

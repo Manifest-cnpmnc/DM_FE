@@ -4,12 +4,13 @@ import {
   getPersonalDocuments,
   getDocumentDownloadUrl,
   uploadDocument,
+  deleteDocument,
   type DocumentItem,
   type DocumentStatus,
   type DocumentVisibility,
 } from '../services/documentService'
 import { getCategories, type CategoryItem } from '../services/categoryService'
-import { Search, Download, Plus, X, Upload, Lock, Globe } from 'lucide-react'
+import { Search, Download, Plus, X, Upload, Lock, Globe, Trash2 } from 'lucide-react'
 
 const statusColors: Record<DocumentStatus, string> = {
   DRAFT: '#f59e0b',
@@ -31,6 +32,7 @@ export default function DocumentsPage() {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [downloadId, setDownloadId] = useState<number | null>(null)
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<number>>(new Set())
 
   const [showUpload, setShowUpload] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
@@ -82,6 +84,56 @@ export default function DocumentsPage() {
       setError('Download failed.')
     } finally {
       setDownloadId(null)
+    }
+  }
+
+  const handleSelectDocument = (id: number, checked: boolean) => {
+    setSelectedDocuments(prev => {
+      const newSet = new Set(prev)
+      if (checked) {
+        newSet.add(id)
+      } else {
+        newSet.delete(id)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedDocuments(new Set(filtered.map(doc => doc.id)))
+    } else {
+      setSelectedDocuments(new Set())
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedDocuments.size === 0) return
+    if (!confirm(`Delete ${selectedDocuments.size} selected document(s)?`)) return
+    setLoading(true)
+    try {
+      await Promise.all(Array.from(selectedDocuments).map(id => deleteDocument(id)))
+      setSelectedDocuments(new Set())
+      setPage(0)
+      fetchDocuments(0)
+    } catch {
+      setError('Delete failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteSingle = async (id: number) => {
+    if (!confirm('Delete this document?')) return
+    setLoading(true)
+    try {
+      await deleteDocument(id)
+      setPage(0)
+      fetchDocuments(0)
+    } catch {
+      setError('Delete failed.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -167,10 +219,26 @@ export default function DocumentsPage() {
 
       {error && <div className="alert alert--error">{error}</div>}
 
+      {selectedDocuments.size > 0 && (
+        <div className="bulk-actions">
+          <span>{selectedDocuments.size} selected</span>
+          <button type="button" className="btn btn--danger" onClick={handleDeleteSelected}>
+            <Trash2 size={14} /> Delete Selected
+          </button>
+        </div>
+      )}
+
       <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  checked={selectedDocuments.size === filtered.length && filtered.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+              </th>
               <th>Title</th>
               <th>Category</th>
               <th>Visibility</th>
@@ -181,12 +249,19 @@ export default function DocumentsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="table__empty">Loading...</td></tr>
+              <tr><td colSpan={7} className="table__empty">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} className="table__empty">No documents found.</td></tr>
+              <tr><td colSpan={7} className="table__empty">No documents found.</td></tr>
             ) : (
               filtered.map((doc) => (
                 <tr key={doc.id} className="table__row--clickable" onClick={() => navigate(`/documents/${doc.id}`)}>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.has(doc.id)}
+                      onChange={(e) => handleSelectDocument(doc.id, e.target.checked)}
+                    />
+                  </td>
                   <td>
                     <div className="table__title">{doc.title}</div>
                     <div className="table__desc">{doc.description}</div>
@@ -208,7 +283,7 @@ export default function DocumentsPage() {
                     </span>
                   </td>
                   <td>{new Date(doc.updatedAt).toLocaleDateString()}</td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="btn btn--sm btn--secondary"
@@ -217,6 +292,13 @@ export default function DocumentsPage() {
                     >
                       <Download size={14} />
                       {downloadId === doc.id ? 'Opening…' : 'Download'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--sm btn--danger"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteSingle(doc.id) }}
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </td>
                 </tr>

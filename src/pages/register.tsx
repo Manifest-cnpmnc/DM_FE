@@ -2,6 +2,7 @@
 import heroImg from '../assets/hero.png'
 import '../styles/register.css'
 import { register } from '../services/authService'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface FormState {
   fullName: string
@@ -26,6 +27,8 @@ export default function RequestAccessPage({ onSwitch, onSuccess }: AuthPageProps
   })
   const [toast, setToast] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showPassword, setShowPassword] = useState<boolean>(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false)
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -181,15 +184,25 @@ export default function RequestAccessPage({ onSwitch, onSuccess }: AuthPageProps
 
               <div className="rap-field rap-field--full">
                 <label className="rap-field__label">Password</label>
-                <input
-                  className="rap-field__input"
-                  type="password"
-                  name="password"
-                  placeholder="Create a password"
-                  value={form.password}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
+                <div className="rap-field__input-wrapper">
+                  <input
+                    className="rap-field__input"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    placeholder="Create a password"
+                    value={form.password}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    className="rap-field__toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 <p className="rap-field__hint">
                   At least 6 characters.
                 </p>
@@ -197,15 +210,25 @@ export default function RequestAccessPage({ onSwitch, onSuccess }: AuthPageProps
 
               <div className="rap-field rap-field--full">
                 <label className="rap-field__label">Confirm Password</label>
-                <input
-                  className="rap-field__input"
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Repeat your password"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
+                <div className="rap-field__input-wrapper">
+                  <input
+                    className="rap-field__input"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    placeholder="Repeat your password"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    className="rap-field__toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -282,6 +282,40 @@
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
+.rap-field__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rap-field__input-wrapper .rap-field__input {
+  flex: 1;
+  padding-right: 50px; /* Space for the toggle button */
+}
+
+.rap-field__toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--rap-light);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.rap-field__toggle:hover {
+  color: var(--rap-navy);
+}
+
+.rap-field__toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .rap-field__input::placeholder { color: #b8b5b2; }
 
 .rap-field__input:hover,

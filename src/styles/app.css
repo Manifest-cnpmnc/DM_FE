@@ -493,6 +493,21 @@ code {
   border-color: #a7f3d0;
 }
 
+/* ── BULK ACTIONS ──────────────────────────────────────────────── */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-brand-50);
+  border: 1px solid var(--color-brand-200);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-brand-700);
+}
+
 /* ── TABLE ─────────────────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
