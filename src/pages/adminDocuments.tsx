@@ -6,8 +6,7 @@ import {
   deleteDocument,
   type DocumentItem,
   type DocumentStatus,
-  type DocumentVisibility,
-  getPersonalDocuments,
+  type DocumentVisibility
 } from '../services/documentService'
 import { getAuthUser } from '../services/authService'
 import { Search, Download, ShieldAlert, Lock, Globe, Building2, Trash2 } from 'lucide-react'
