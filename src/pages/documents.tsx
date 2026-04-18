@@ -232,8 +232,9 @@ export default function DocumentsPage() {
         <table className="table">
           <thead>
             <tr>
-              <th>
+              <th className="table__checkbox-cell table__select-all">
                 <input
+                  className={selectedDocuments.size > 0 ? 'table__select-all-input table__select-all-input--active' : 'table__select-all-input'}
                   type="checkbox"
                   checked={selectedDocuments.size === filtered.length && filtered.length > 0}
                   onChange={(e) => handleSelectAll(e.target.checked)}
