@@ -402,7 +402,10 @@ export default function DocumentDetailPage() {
     }
   }
 
-  const handlePreviewLatest = () => handlePreview(() => getDocumentDownloadUrl(docId), doc.title + (versions[0]?.fileName ? '.' + versions[0].fileName.split('.').pop() : ''))
+  const handlePreviewLatest = () => {
+    if (!doc) return
+    handlePreview(() => getDocumentDownloadUrl(docId), doc.title + (versions[0]?.fileName ? '.' + versions[0].fileName.split('.').pop() : ''))
+  }
   const handlePreviewVersion = (v: DocumentVersion) => handlePreview(() => getDocumentVersionDownloadUrl(docId, v.versionNumber), v.fileName)
 
   if (loading) return <div className="page"><p>Loading...</p></div>
