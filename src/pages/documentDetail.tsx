@@ -31,7 +31,7 @@ import { getAuthUser } from '../services/authService'
 import {
   ArrowLeft, Download, Trash2, Edit3, Save, X, Upload, RotateCcw,
   Send, CheckCircle, XCircle, Archive, Share2, Lock, Globe, Building2,
-  Users as UsersIcon, UserPlus, UserMinus,
+  Users as UsersIcon, UserPlus, UserMinus, Eye, FileText, AlertCircle,
 } from 'lucide-react'
 
 const statusColors: Record<DocumentStatus, string> = {
@@ -112,6 +112,15 @@ export default function DocumentDetailPage() {
   const [collabEmail, setCollabEmail] = useState('')
   const [collabPermission, setCollabPermission] = useState<CollaboratorPermission>('READ')
   const [addingCollab, setAddingCollab] = useState(false)
+  
+  // Preview
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewFileName, setPreviewFileName] = useState('')
+  const [previewFileType, setPreviewFileType] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const [previewTextContent, setPreviewTextContent] = useState<string | null>(null)
 
   const docId = Number(id)
   const isOwner = doc?.createdById === user?.id
@@ -355,6 +364,47 @@ export default function DocumentDetailPage() {
     }
   }
 
+  const getFileType = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase() || ''
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return 'image'
+    if (ext === 'pdf') return 'pdf'
+    if (['txt', 'md', 'json', 'js', 'ts', 'html', 'css', 'sql', 'py', 'java', 'c', 'cpp'].includes(ext)) return 'text'
+    return 'other'
+  }
+
+  const handlePreview = async (urlFetcher: () => Promise<string>, fileName: string) => {
+    setPreviewLoading(true)
+    setShowPreview(true)
+    setPreviewFileName(fileName)
+    setPreviewError(null)
+    setPreviewTextContent(null)
+    
+    const type = getFileType(fileName)
+    setPreviewFileType(type)
+
+    try {
+      const url = await urlFetcher()
+      setPreviewUrl(url)
+
+      if (type === 'text') {
+        const res = await fetch(url)
+        if (res.ok) {
+          const text = await res.text()
+          setPreviewTextContent(text)
+        } else {
+          setPreviewError('Failed to load text content.')
+        }
+      }
+    } catch {
+      setPreviewError('Failed to generate preview URL.')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const handlePreviewLatest = () => handlePreview(() => getDocumentDownloadUrl(docId), doc.title + (versions[0]?.fileName ? '.' + versions[0].fileName.split('.').pop() : ''))
+  const handlePreviewVersion = (v: DocumentVersion) => handlePreview(() => getDocumentVersionDownloadUrl(docId, v.versionNumber), v.fileName)
+
   if (loading) return <div className="page"><p>Loading...</p></div>
   if (!doc) return <div className="page"><p>Document not found.</p></div>
 
@@ -394,6 +444,7 @@ export default function DocumentDetailPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn--secondary btn--sm" onClick={handlePreviewLatest}><Eye size={14} /> Preview</button>
           <button type="button" className="btn btn--secondary btn--sm" onClick={handleDownload}><Download size={14} /> Download</button>
           {canEditDoc && (
             <button type="button" className="btn btn--primary btn--sm" onClick={() => { setShareVisibility(doc.visibility); setShowShare(true) }}>
@@ -513,9 +564,10 @@ export default function DocumentDetailPage() {
                       <td>{v.uploadedByName}</td>
                       <td>{new Date(v.createdAt).toLocaleString()}</td>
                       <td style={{ display: 'flex', gap: 6 }}>
-                        <button type="button" className="btn btn--sm btn--secondary" onClick={() => handleDownloadVersion(v)}><Download size={14} /></button>
+                        <button type="button" className="btn btn--sm btn--primary" onClick={() => handlePreviewVersion(v)} title="Preview"><Eye size={14} /></button>
+                        <button type="button" className="btn btn--sm btn--secondary" onClick={() => handleDownloadVersion(v)} title="Download"><Download size={14} /></button>
                         {canRollback && (
-                          <button type="button" className="btn btn--sm btn--ghost" onClick={() => handleRollback(v)}><RotateCcw size={14} /> Rollback</button>
+                          <button type="button" className="btn btn--sm btn--ghost" onClick={() => handleRollback(v)} title="Rollback"><RotateCcw size={14} /></button>
                         )}
                       </td>
                     </tr>
@@ -723,6 +775,62 @@ export default function DocumentDetailPage() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showPreview && (
+        <div className="modal-overlay" onClick={() => setShowPreview(false)}>
+          <div className="modal modal--preview" onClick={(e) => e.stopPropagation()}>
+            <div className="modal__header">
+              <h2 className="modal__title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Eye size={18} /> Preview: {previewFileName}
+              </h2>
+              <button type="button" className="btn btn--icon" onClick={() => setShowPreview(false)}><X size={20} /></button>
+            </div>
+            <div className="modal__body">
+              <div className="preview-container">
+                {previewLoading && (
+                  <div className="preview-loading">
+                    <div className="loader"></div>
+                  </div>
+                )}
+                
+                {previewError ? (
+                  <div className="preview-error">
+                    <AlertCircle size={48} color="#ef4444" />
+                    <p>{previewError}</p>
+                    <button className="btn btn--secondary btn--sm" onClick={() => setShowPreview(false)}>Close</button>
+                  </div>
+                ) : (
+                  <>
+                    {previewFileType === 'image' && previewUrl && (
+                      <img src={previewUrl} alt={previewFileName} className="preview-image" />
+                    )}
+                    
+                    {previewFileType === 'pdf' && previewUrl && (
+                      <iframe src={`${previewUrl}#toolbar=0`} className="preview-frame" title={previewFileName} />
+                    )}
+                    
+                    {previewFileType === 'text' && (
+                      <pre className="preview-text">{previewTextContent}</pre>
+                    )}
+                    
+                    {previewFileType === 'other' && (
+                      <div className="preview-error">
+                        <FileText size={48} />
+                        <p>No preview available for this file type.</p>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn--primary btn--sm" onClick={() => {
+                            if (previewUrl) window.open(previewUrl, '_blank')
+                          }}>Download to view</button>
+                          <button className="btn btn--ghost btn--sm" onClick={() => setShowPreview(false)}>Close</button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
