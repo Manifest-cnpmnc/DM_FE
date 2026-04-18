@@ -3,12 +3,13 @@ import { useNavigate, Navigate } from 'react-router-dom'
 import {
   getDocuments,
   getDocumentDownloadUrl,
+  deleteDocument,
   type DocumentItem,
   type DocumentStatus,
   type DocumentVisibility,
 } from '../services/documentService'
 import { getAuthUser } from '../services/authService'
-import { Search, Download, ShieldAlert, Lock, Globe, Building2 } from 'lucide-react'
+import { Search, Download, ShieldAlert, Lock, Globe, Building2, Trash2 } from 'lucide-react'
 
 const statusColors: Record<DocumentStatus, string> = {
   DRAFT: '#f59e0b',
@@ -49,6 +50,20 @@ export default function AdminDocumentsPage() {
 
   if (user?.role !== 'ADMIN') {
     return <Navigate to="/documents" replace />
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this document?')) return
+    setLoading(true)
+    try {
+      await deleteDocument(id)
+      fetchDocs(0)
+      setPage(0)
+    } catch {
+      setError('Delete failed.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchDocs = async (p: number) => {
@@ -189,7 +204,7 @@ export default function AdminDocumentsPage() {
                     </span>
                   </td>
                   <td>{new Date(doc.updatedAt).toLocaleDateString()}</td>
-                  <td>
+                  <td className="table__actions" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="btn btn--sm btn--secondary"
@@ -198,6 +213,14 @@ export default function AdminDocumentsPage() {
                     >
                       <Download size={14} />
                       {downloadId === doc.id ? 'Opening…' : 'Download'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--sm btn--danger"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(doc.id) }}
+                    >
+                      <Trash2 size={14} />
+                      Delete
                     </button>
                   </td>
                 </tr>

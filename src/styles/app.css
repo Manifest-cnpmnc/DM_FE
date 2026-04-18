@@ -590,6 +590,13 @@ code {
   color: var(--color-ink);
 }
 
+.table__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .table__desc {
   font-size: 0.82rem;
   color: var(--color-muted);
@@ -767,6 +774,20 @@ select.form-field__input {
 
 .modal__body {
   padding: 24px 26px;
+}
+
+.notice-strip {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: var(--gradient-brand-soft);
+  border: 1px solid var(--color-brand-100);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--color-brand-800);
 }
 
 .modal__footer {
