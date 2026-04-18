@@ -255,7 +255,7 @@ export default function DocumentsPage() {
             ) : (
               filtered.map((doc) => (
                 <tr key={doc.id} className="table__row--clickable" onClick={() => navigate(`/documents/${doc.id}`)}>
-                  <td onClick={(e) => e.stopPropagation()}>
+                  <td className="table__checkbox-cell" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedDocuments.has(doc.id)}
@@ -283,7 +283,7 @@ export default function DocumentsPage() {
                     </span>
                   </td>
                   <td>{new Date(doc.updatedAt).toLocaleDateString()}</td>
-                  <td onClick={(e) => e.stopPropagation()}>
+                  <td className="table__actions" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="btn btn--sm btn--secondary"
@@ -295,7 +295,7 @@ export default function DocumentsPage() {
                     </button>
                     <button
                       type="button"
-                      className="btn btn--sm btn--danger"
+                      className="btn btn--sm btn--danger table__delete-btn"
                       onClick={(e) => { e.stopPropagation(); handleDeleteSingle(doc.id) }}
                     >
                       <Trash2 size={14} />

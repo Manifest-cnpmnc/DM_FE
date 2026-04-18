@@ -553,6 +553,27 @@ code {
   background: linear-gradient(90deg, var(--color-brand-50) 0%, transparent 80%);
 }
 
+.table__checkbox-cell input {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.table__row--clickable:hover .table__checkbox-cell input,
+.table__checkbox-cell input:checked {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.table__delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.table__row--clickable:hover .table__delete-btn {
+  opacity: 1;
+}
+
 .table__title {
   font-weight: 700;
   color: var(--color-ink);
