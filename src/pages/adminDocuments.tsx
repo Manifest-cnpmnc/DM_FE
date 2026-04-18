@@ -48,6 +48,8 @@ export default function AdminDocumentsPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [downloadId, setDownloadId] = useState<number | null>(null)
 
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<number>>(new Set())
+
   if (user?.role !== 'ADMIN') {
     return <Navigate to="/documents" replace />
   }
@@ -107,6 +109,42 @@ export default function AdminDocumentsPage() {
     }
   }
 
+  const handleSelectDocument = (id: number, checked: boolean) => {
+    setSelectedDocuments(prev => {
+      const newSet = new Set(prev)
+      if (checked) {
+        newSet.add(id)
+      } else {
+        newSet.delete(id)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedDocuments(new Set(filtered.map(doc => doc.id)))
+    } else {
+      setSelectedDocuments(new Set())
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedDocuments.size === 0) return
+    if (!confirm(`Delete ${selectedDocuments.size} selected document(s)?`)) return
+    setLoading(true)
+    try {
+      await Promise.all(Array.from(selectedDocuments).map(id => deleteDocument(id)))
+      setSelectedDocuments(new Set())
+      setPage(0)
+      fetchDocuments(0)
+    } catch {
+      setError('Delete failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="page">
       <div className="page__header">
@@ -162,10 +200,27 @@ export default function AdminDocumentsPage() {
 
       {error && <div className="alert alert--error">{error}</div>}
 
+      {selectedDocuments.size > 0 && (
+        <div className="bulk-actions">
+          <span>{selectedDocuments.size} selected</span>
+          <button type="button" className="btn btn--danger" onClick={handleDeleteSelected}>
+            <Trash2 size={14} /> Delete Selected
+          </button>
+        </div>
+      )}
+
       <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
+              <th className="table__checkbox-cell table__select-all">
+                <input
+                  className={selectedDocuments.size > 0 ? 'table__select-all-input table__select-all-input--active' : 'table__select-all-input'}
+                  type="checkbox"
+                  checked={selectedDocuments.size === filtered.length && filtered.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+              </th>
               <th>Title</th>
               <th>Author</th>
               <th>Scope</th>
@@ -183,6 +238,13 @@ export default function AdminDocumentsPage() {
             ) : (
               filtered.map((doc) => (
                 <tr key={doc.id} className="table__row--clickable" onClick={() => navigate(`/documents/${doc.id}`)}>
+                  <td className="table__checkbox-cell" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.has(doc.id)}
+                      onChange={(e) => handleSelectDocument(doc.id, e.target.checked)}
+                    />
+                  </td>
                   <td>
                     <div className="table__title">{doc.title}</div>
                     <div className="table__desc">{doc.description}</div>

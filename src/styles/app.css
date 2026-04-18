@@ -571,7 +571,8 @@ code {
 
 .table__select-all-input--active,
 .table-wrap:hover .table__select-all input,
-.table__checkbox-cell input:checked {
+.table__checkbox-cell input:checked,
+.table__row--clickable:hover .table__checkbox-cell input {
   opacity: 1;
   pointer-events: auto;
 }
