@@ -641,8 +641,8 @@ export default function OrganizationDetailPage() {
               <button type="button" className="btn btn--icon" onClick={() => setShowUpload(false)}><X size={20} /></button>
             </div>
             <div className="modal__body">
-              <div className="notice-strip">
-                <Building2 size={14} /> This file will be uploaded to <strong>{org.name}</strong>.
+              <div className="notice-strip" style={{ display: 'flex', alignItems: 'center', gap: 4}}>
+                <Building2 size={14} style={{marginRight: 4}}/> This file will be uploaded to <strong>{org.name}</strong>.
               </div>
               <div className="form-field">
                 <label className="form-field__label">Title *</label>
