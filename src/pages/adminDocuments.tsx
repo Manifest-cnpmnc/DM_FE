@@ -114,7 +114,7 @@ export default function AdminDocumentsPage() {
       setLoading(true)
       setError(null)
       try {
-        const res = await getPersonalDocuments({ page: p, size: 20 })
+        const res = await getDocuments({ page: p, size: 20 })
         setDocuments(res.data.content)
         setTotalPages(res.data.totalPages)
       } catch {
