@@ -150,9 +150,9 @@ Runs ESLint to check code quality and TypeScript compliance.
   - Error messages and user feedback
   - Code merge to shared branch
 
-- **Team 3:** Story 9 - Attach Logs to All Actions
-  - Connect audit logging to upload/download/delete operations
-  - Complete activity history tracking
+- **Team 3:** Story 9 - Files preview
+  - Implement files preview function
+  - Enable viewing files on browser
 
 - **Team 4:** Story 10 - Demo Data & Presentation
   - Create 10 sample categories
